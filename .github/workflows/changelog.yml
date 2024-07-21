@@ -4,6 +4,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write # Grant write permissions for the repository contents
+
 jobs:
   update-changelog:
     runs-on: ubuntu-latest
@@ -11,21 +14,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Get Release Notes
-        id: get_release_notes
-        uses: peter-evans/repository-dispatch@v1
-        with:
-          repository: ${{ github.repository }}
-          event-type: 'get-release-notes'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fetch all releases
+        run: |
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -s https://api.github.com/repos/${{ github.repository }}/releases > releases.json
+          echo "Fetched releases.json:"
+          cat releases.json # Debug: output the contents of releases.json
+
+      - name: Generate changelog content
+        run: |
+          python3 generate_changelog.py
 
       - name: Update README with Changelog
         run: |
-          latest_release=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
-          release_notes=$(echo $latest_release | jq -r '.body')
-          sed -i '/<!-- changelog-start -->/,/<!-- changelog-end -->/{//!d}' README.md
-          sed -i '/<!-- changelog-start -->/a '"$release_notes"'' README.md
+          changelog=$(cat changelog.txt)
+          awk -v changelog="$changelog" '
+            BEGIN { start = 0 }
+            /<!-- changelog-start -->/ { print; print changelog; start = 1; next }
+            /<!-- changelog-end -->/ { start = 0 }
+            !start { print }
+          ' README.md > README_new.md
+          mv README_new.md README.md
 
       - name: Commit and Push Changes
         run: |
