@@ -18,7 +18,7 @@ jobs:
         id: sub_release_manifest_version
         uses: microsoft/variable-substitution@v1
         with:
-          files: 'src/module.json'
+          files: 'module.json'
         env:
           version: ${{github.event.release.tag_name}}
           url: https://github.com/${{github.repository}}
