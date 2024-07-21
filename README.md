@@ -11,14 +11,14 @@ VoiceGen is a Foundry VTT module that allows Game Masters (GMs) and players to g
    - [Token Effects](#token-effects)
    - [History](#history)
    - [API](#api)
-   - [Change Lyrics](#change-lyrics)
+   - [Change Description](#change-description)
 4. [Functions](#functions)
 5. [Usage](#usage)
    - [Creating Token Voices](#creating-token-voices)
    - [Creating Token Effects](#creating-token-effects)
    - [Managing Sounds](#managing-sounds)
    - [Playing Sounds](#playing-sounds)
-   - [Editing Lyrics](#editing-lyrics)
+   - [Editing Description](#editing-description)
 6. [Changelog](#changelog)
 7. [License](#license)
 
@@ -60,8 +60,8 @@ Maintain a history of generated sounds for easy reference and playback.
 ### API
 VoiceGen provides an API for programmatic interaction with the module.
 
-### Change Lyrics
-Edit the lyrics of existing sound files directly within Foundry VTT.
+### Change Description
+Edit the Description of existing sound files directly within Foundry VTT.
 
 ## Functions
 
@@ -83,10 +83,10 @@ Handles various sound-related commands.
 
 ### Play_Sound_HUD
 
-Generates and plays a sound based on the provided lyrics and token name.
+Generates and plays a sound based on the provided Description and token name.
 
 **Parameters**:
-- `lyrics`: The lyrics for the sound.
+- `lyrics`: The Description for the sound.
 - `tokenName`: The name of the token.
 
 ### Get_Userdata
@@ -107,7 +107,7 @@ Saves a file to the specified path.
 
 ### markFileAsDeleted
 
-Marks a file as deleted by changing its lyrics to "DELETED".
+Marks a file as deleted by changing its Description to "DELETED". Remember that foundry cannot delete files, so the audio file is still inside the folder but won't show up in the HUD as it's marked DELETED.
 
 **Parameters**:
 - `filePath`: The path of the file.
@@ -117,11 +117,11 @@ Marks a file as deleted by changing its lyrics to "DELETED".
 
 ### saveUpdatedLyrics
 
-Updates the lyrics of a file and saves it.
+Updates the Description of a file and saves it.
 
 **Parameters**:
 - `filePath`: The path of the file.
-- `newLyrics`: The new lyrics.
+- `newLyrics`: The new Description.
 
 ### refreshMP3Metadata
 
@@ -156,7 +156,7 @@ Updates the cache of mp3 metadata.
 
 ### showEditDialog
 
-Shows a dialog to edit the lyrics of a file.
+Shows a dialog to edit the Description of a file.
 
 **Parameters**:
 - `filePath`: The path of the file.
@@ -208,7 +208,7 @@ If a token is selected, the effect will be saved in a subfolder named after the 
 ### Managing Sounds
 
 - **Generating Sound Effects**: Use the `/effect` command to generate sound effects.
-- **Editing Lyrics**: Right-click on a sound icon and select "Edit Lyrics" to modify the lyrics.
+- **Editing Description**: Right-click on a sound icon in the HUD to "Edit Description".
 
 ### Playing Sounds
 
