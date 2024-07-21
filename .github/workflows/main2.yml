@@ -24,13 +24,8 @@ jobs:
           manifest: https://github.com/${{ github.repository }}/releases/latest/download/module.json
           download: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/module.zip
 
-      - run: mkdir package
-
-      # Move necessary files to the package directory
-      - run: mv -v module.json LICENSE main.js token-sounds.js styles/token-sounds.css package/
-
       # Create a zip file with all files required by the module to add to the release
-      - run: (cd package && zip -r "$OLDPWD/module.zip" .)
+      - run: zip -r module.zip module.json LICENSE main.js token-sounds.js styles/token-sounds.css
 
       - name: Update Release with Files
         id: create_version_release
@@ -41,6 +36,6 @@ jobs:
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: 'module.json, module.zip'
+          artifacts: 'module.zip'
           tag: ${{ github.event.release.tag_name }}
           body: ${{ github.event.release.body }}
