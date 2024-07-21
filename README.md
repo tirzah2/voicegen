@@ -196,6 +196,9 @@ Alternatively, you can use the HUD to generate token voices:
 2. Click on the sound icon in the token HUD.
 3. Enter the text in the input box and click "Create".
 
+# Note
+If you select a token and create a voice sound, remember that you need to have a voice with the same name of the token in Elevenlabs.io. The module will try to save that voice in a subfolder named like the token. It's good practice to re-create those folders in advance. 
+
 ### Creating Token Effects
 
 To create a token effect, use the `/effect` command followed by the description, optional duration in parentheses, and the filename:
