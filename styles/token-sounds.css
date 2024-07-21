@@ -1,18 +1,23 @@
+/* Existing Styles */
 .token-sounds-wrapper {
   visibility: hidden;
   position: absolute;
   left: 65px;
   top: -132px;
-  display: grid;
-  padding: 3px;
   box-sizing: content-box;
   width: 200px;
   grid-template-columns: repeat(4, 25%);
   background: rgba(0, 0, 0, 0.6);
   box-shadow: 0 0 15px var(--color-shadow-dark);
   border: 1px solid var(--color-border-dark-3);
-  border-radius: 4px;
   pointer-events: all;
+  max-height: 300px;
+  overflow-y: auto;
+  display: inline-block;
+  background-color: #a33552; /* Adjust as needed */
+  padding: 10px;
+  border-radius: 5px;
+  overflow-x: hidden;
 }
 
 .token-sounds-wrapper.active {
@@ -27,7 +32,6 @@
   border-left: 1px solid rgba(0, 0, 0, 0);
   border-right: 1px solid rgba(0, 0, 0, 0);
 }
-
 
 .token-sounds-wrapper .sound-control img {
   width: 48px;
@@ -51,4 +55,109 @@
   position: relative;
 }
 
+/* New Styles */
+.voice-icon {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  width: 100%;
+  background-color: #6189d39e; /* Special color for 'voice' files */
+}
 
+.voice-icon span {
+  display: inline-grid;
+  font-size: 12px;
+  color: black;
+  width: 100%;
+  line-height: 14px;
+  word-wrap: break-word;
+  height: 50px;
+  justify-content: start;
+  align-content: space-between;
+  justify-items: start;
+}
+
+.no-audio {
+  color: #ffffff;
+  text-align: center;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.sound-icon {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  margin-bottom: 5px;
+  background-color: #8dae68;
+  border-radius: 5px;
+  width: 100%;
+}
+
+.sound-icon i {
+  margin-right: 10px;
+}
+
+.voice-icon:hover {
+  background-color: #9b61d39e;
+}
+
+.sound-icon:hover {
+  background-color: #d5e160;
+}
+
+.sound-icon span {
+  display: inline-grid;
+  font-size: 12px;
+  color: black;
+  width: 100%;
+  line-height: 14px;
+  word-wrap: break-word;
+  height: 50px;
+  justify-content: start;
+  align-content: space-between;
+}
+
+.delete-icon {
+  margin-right: -120px;
+  color: red;
+  cursor: pointer;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-content label {
+  margin-bottom: 5px;
+}
+
+.dialog-content input {
+  margin-bottom: 10px;
+}
+
+.create-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.create-input11 {
+  flex: 1;
+  padding: 5px;
+  margin-right: 5px;
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  margin-right: 5px;
+}
+
+.create-button11 {
+  padding: 0px 0px;
+  width: 23px;
+  height: 31px;
+  background: rgb(221 48 156 / 46%);
+  border: 2px groove var(--color-border-light-highlight);
+}
