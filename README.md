@@ -47,6 +47,7 @@ To configure these settings:
 
 ### Token Voices
 VoiceGen allows you to generate and manage voices associated with tokens on the map. This includes playing sounds, generating speech, and editing sound details.
+![Screenshot 1](screenshots/Screenshot_1.png)
 
 ### Token Effects
 Generate sound effects associated with specific tokens, saving them in a designated folder. If a token is selected, the effect will be saved in a subfolder named after the token.
