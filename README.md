@@ -1,4 +1,3 @@
-
 # VoiceGen Module
 
 VoiceGen is a Foundry VTT module that allows Game Masters (GMs) and players to generate and manage sounds, including speech and sound effects, associated with tokens on the map. The module integrates with the ElevenLabs API to generate and play audio effects and manage them efficiently within the game.
@@ -42,7 +41,8 @@ To configure these settings:
 2. Click on `Configure Settings`.
 3. Select `Module Settings`.
 4. Locate `VoiceGen` and set the required configurations.
-
+<br>
+<img src="screenshots/Screenshot_3.png" alt="Screenshot 3" width="50%">
 ## Features
 
 ### Token Voices
@@ -55,7 +55,8 @@ Generate sound effects associated with specific tokens, saving them in a designa
 
 ### History
 Maintain a history of generated sounds for easy reference and playback.
-
+<br>
+  <img src="screenshots/Screenshot_2.png" alt="Screenshot 1" width="20%">
 ### API
 VoiceGen provides an API for programmatic interaction with the module.
 
