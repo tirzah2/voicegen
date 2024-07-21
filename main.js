@@ -30,8 +30,6 @@ Hooks.once('init', () => {
         default: "", // Ensure a sensible default
         filePicker: 'folder'  // This enables folder selection directly in the setting
     });
-    
-    
 
     game.settings.register("voicegen", "selected-api-key", {
         name: "Selected API Key",
@@ -59,6 +57,22 @@ Hooks.once('init', () => {
         type: String,
         default: "", // Set a default path or leave it empty for users to select
         filePicker: 'folder'  // This enables folder selection directly in the setting
+    });
+
+    game.settings.register("voicegen", "selected-model", {
+        name: "Selected Model",
+        hint: "Choose your Elevenlabs model",
+        scope: "client",
+        config: true,
+        type: String,
+        choices: {
+            "eleven_multilingual_v2": "Eleven Multilingual V2",
+            "eleven_turbo_v2": "Eleven Turbo V2",
+            "eleven_turbo_v2_5": "Eleven Turbo V2.5",
+            "eleven_monolingual_v1": "Eleven Monolingual V1"
+        },
+        default: "eleven_multilingual_v2",
+        onChange: value => { Initialize_Main() }
     });
 
     Initialize_Main();
@@ -101,8 +115,8 @@ async function Initialize_Main() {
     api_keys = keys.split(",").map(key => key.trim()).filter(key => key);
     selected_api_key = game.settings.get("voicegen", "selected-api-key");
     if (selected_api_key) {
-        Get_Voices()
-        Get_Userdata()
+        Get_Voices();
+        Get_Userdata();
     }
 }
 
@@ -114,61 +128,63 @@ async function Get_Userdata() {
         }
     }).then(response => response.text()).then(text => JSON.parse(text))
 }
+
 export function Play_Sound_HUD(lyrics, tokenName) {
     if (selected_api_key) {
-      let voice = all_Voices.voices.find(obj => obj.name === tokenName);
-      if (voice) {
-        Text_To_Speech(voice.voice_id, lyrics);
-      } else {
-        ui.notifications.error(`Voice for token '${tokenName}' not found. Visit <a href="https://www.elevenlabs.io/" target="_blank">https://www.elevenlabs.io/</a> and create a voice named '${tokenName}'. Also, remember to refresh both elevenlabs and foundry by pressing F5`);
-      }
-    } else {
-      Set_Key_Window();
-    }
-  }
-  function Play_Sound(message) {
-    if (message.startsWith("/playsound")) {
-      if (selected_api_key) {
-        let voiceName = message.substring(message.indexOf("[") + 1, message.indexOf("]"));
-        let text = message.substring(message.indexOf("]") + 1).trim(); // This is the description text
-  
-        let voice = all_Voices.voices.find(obj => obj.name === voiceName);
+        let voice = all_Voices.voices.find(obj => obj.name === tokenName);
         if (voice) {
-          Text_To_Speech(voice.voice_id, text);  // Pass the text as both the TTS input and as the description for the ID3 tags
+            Text_To_Speech(voice.voice_id, lyrics);
         } else {
-          ui.notifications.error(`Voice '${voiceName}' not found.`);
+            ui.notifications.error(`Voice for token '${tokenName}' not found. Visit <a href="https://www.elevenlabs.io/" target="_blank">https://www.elevenlabs.io/</a> and create a voice named '${tokenName}'. Also, remember to refresh both elevenlabs and foundry by pressing F5`);
         }
-      } else {
+    } else {
         Set_Key_Window();
-      }
-      return false;
-    } else if (message.startsWith("/play")) {
-      if (selected_api_key) {
-        doStuff()
-      } else {
-        Set_Key_Window()
-      }
-      return false;
-    } else if (message.startsWith("/effect")) {
-      if (selected_api_key) {
-        let effectParams = message.match(/\[([^\]]+)\]\s*(\((\d+)\))?\s*([^\s]+)$/);
-        if (effectParams) {
-          let effectDescription = effectParams[1];
-          let duration = effectParams[3] ? parseInt(effectParams[3], 10) : 3; // Default to 3 seconds if not specified
-          let filename = effectParams[4];
-          Generate_Sound_Effect(effectDescription, filename, duration);
-        } else {
-          ui.notifications.error("Invalid command format. Use /effect [description] (duration) filename.ext");
-        }
-      } else {
-        Set_Key_Window()
-      }
-      return false;
-    } else if (message.startsWith("/history")) {
-      Fetch_History();
-      return false;
     }
-  }
+}
+
+function Play_Sound(message) {
+    if (message.startsWith("/playsound")) {
+        if (selected_api_key) {
+            let voiceName = message.substring(message.indexOf("[") + 1, message.indexOf("]"));
+            let text = message.substring(message.indexOf("]") + 1).trim(); // This is the description text
+
+            let voice = all_Voices.voices.find(obj => obj.name === voiceName);
+            if (voice) {
+                Text_To_Speech(voice.voice_id, text);  // Pass the text as both the TTS input and as the description for the ID3 tags
+            } else {
+                ui.notifications.error(`Voice '${voiceName}' not found.`);
+            }
+        } else {
+            Set_Key_Window();
+        }
+        return false;
+    } else if (message.startsWith("/play")) {
+        if (selected_api_key) {
+            doStuff()
+        } else {
+            Set_Key_Window()
+        }
+        return false;
+    } else if (message.startsWith("/effect")) {
+        if (selected_api_key) {
+            let effectParams = message.match(/\[([^\]]+)\]\s*(\((\d+)\))?\s*([^\s]+)$/);
+            if (effectParams) {
+                let effectDescription = effectParams[1];
+                let duration = effectParams[3] ? parseInt(effectParams[3], 10) : 3; // Default to 3 seconds if not specified
+                let filename = effectParams[4];
+                Generate_Sound_Effect(effectDescription, filename, duration);
+            } else {
+                ui.notifications.error("Invalid command format. Use /effect [description] (duration) filename.ext");
+            }
+        } else {
+            Set_Key_Window()
+        }
+        return false;
+    } else if (message.startsWith("/history")) {
+        Fetch_History();
+        return false;
+    }
+}
 
 async function runPlaySound(chunks) {
     let blob = new Blob(chunks, { type: 'audio/mpeg' })
@@ -186,83 +202,79 @@ async function Get_Voices() {
         then(text => all_Voices = JSON.parse(text))
 }
 
-
-
 async function Generate_Sound_Effect(effectDescription, filename, duration = 3) {
     let savePath;
-  
+
     // Check if there is a selected token
     const selectedToken = canvas.tokens.controlled[0];
     if (selectedToken) {
-      // Use the save-voice-folder when a token is selected
-      const saveBasePath = game.settings.get("voicegen", "save-voice-folder");
-      savePath = `${saveBasePath}/${selectedToken.name}`;
+        // Use the save-voice-folder when a token is selected
+        const saveBasePath = game.settings.get("voicegen", "save-voice-folder");
+        savePath = `${saveBasePath}/${selectedToken.name}`;
     } else {
-      // Use the save-effect-folder when no token is selected
-      savePath = game.settings.get("voicegen", "save-effect-folder");
+        // Use the save-effect-folder when no token is selected
+        savePath = game.settings.get("voicegen", "save-effect-folder");
     }
-  
+
     const response = await fetch('https://api.elevenlabs.io/v1/sound-generation', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'xi-api-key': selected_api_key
-      },
-      body: JSON.stringify({
-        "text": effectDescription,
-        "duration_seconds": duration,  // Optional, default value
-        "prompt_influence": 0.3  // Optional, default value
-      })
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'xi-api-key': selected_api_key
+        },
+        body: JSON.stringify({
+            "text": effectDescription,
+            "duration_seconds": duration,  // Optional, default value
+            "prompt_influence": 0.3  // Optional, default value
+        })
     });
-  
+
     if (!response.ok) {
-      console.error(`Error: ${response.statusText}`);
-      return;
+        console.error(`Error: ${response.statusText}`);
+        return;
     }
-  
+
     const reader = response.body.getReader();
     let chunks = [];
     while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
     }
-  
+
     const blob = new Blob(chunks, { type: 'audio/mpeg' });
     const arrayBuffer = await blob.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
     saveFile(buffer, `${savePath}/${filename}`);
-  
+
     // Show the dialog to create the AmbientSound using the path from settings
     if (game.user.isGM) {
         new Dialog({
-          title: "Create Ambient Sound",
-          content: `<p>Do you want to create the sound on the scene?</p>`,
-          buttons: {
-            yes: {
-              label: "Yes",
-              callback: async () => {
-                let options = await getAmbientSoundOptions(`${savePath}/${filename}`);
-                const location = await warpgate.crosshairs.show({
-                  size: 1,
-                  label: "Select Sound Location",
-                  tag: 'sound'
-                });
-                options.x = location.x;
-                options.y = location.y;
-                canvas.scene.createEmbeddedDocuments("AmbientSound", [options]);
-              }
-            },
-            no: {
-              label: "No",
-              callback: () => { }
+            title: "Create Ambient Sound",
+            content: `<p>Do you want to create the sound on the scene?</p>`,
+            buttons: {
+                yes: {
+                    label: "Yes",
+                    callback: async () => {
+                        let options = await getAmbientSoundOptions(`${savePath}/${filename}`);
+                        const location = await warpgate.crosshairs.show({
+                            size: 1,
+                            label: "Select Sound Location",
+                            tag: 'sound'
+                        });
+                        options.x = location.x;
+                        options.y = location.y;
+                        canvas.scene.createEmbeddedDocuments("AmbientSound", [options]);
+                    }
+                },
+                no: {
+                    label: "No",
+                    callback: () => { }
+                }
             }
-          }
         }).render(true);
     }
-  }
-  
-
+}
 
 async function getAmbientSoundOptions(path) {
     return new Promise((resolve) => {
@@ -310,7 +322,9 @@ async function getAmbientSoundOptions(path) {
 }
 
 async function Text_To_Speech(voiceID, text) {
-    let container = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + voiceID, {
+    const selectedModel = game.settings.get("voicegen", "selected-model");
+
+    let container = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceID}`, {
         method: 'POST',
         headers: {
             'accept': 'audio/mpeg',
@@ -319,7 +333,7 @@ async function Text_To_Speech(voiceID, text) {
         },
         body: JSON.stringify({
             "text": text,  // This is the spoken text
-            "model_id": "eleven_multilingual_v2"
+            "model_id": selectedModel  // Use the selected model
         })
     });
 
@@ -371,9 +385,6 @@ async function embedLyrics(arrayBuffer, description) {
     }
 }
 
-
-
-
 async function saveFile(data, path, createSubDir = false) {
     let dir = path.substring(0, path.lastIndexOf('/'));
 
@@ -397,9 +408,6 @@ async function saveFile(data, path, createSubDir = false) {
         ui.notifications.error(`Failed to save file: ${path}`);
     }
 }
-
-
-
 
 async function Fetch_History() {
     historyItems = []; // Initialize as an empty array
