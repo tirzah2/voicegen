@@ -14,6 +14,7 @@ jobs:
         id: fetch_releases
         run: |
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -s https://api.github.com/repos/${{ github.repository }}/releases > releases.json
+          echo "Fetched releases.json:"
           cat releases.json # Debug: output the contents of releases.json
 
       - name: Generate changelog content
@@ -21,11 +22,16 @@ jobs:
         run: |
           changelog=""
           releases=$(jq -c '.[]' releases.json)
+          echo "Releases JSON objects:"
+          echo "$releases" # Debug: output each release JSON object
+
           for release in $releases; do
             release_notes=$(echo $release | jq -r '.body')
             release_tag=$(echo $release | jq -r '.tag_name')
-            changelog+="## $release_tag\n$release_notes\n\n"
+            changelog="${changelog}\n## ${release_tag}\n${release_notes}\n"
           done
+          echo "Generated changelog content:"
+          echo "$changelog" # Debug: output the generated changelog content
           echo "::set-output name=changelog::$changelog"
 
       - name: Update README with Changelog
