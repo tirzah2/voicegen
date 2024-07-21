@@ -10,6 +10,19 @@ export function registerTokenHooks() {
     const tokenFolder = `${folderPath}/${token.name}`;
     console.log('Token folder path:', tokenFolder);
 
+    // Check if the token folder exists, if not, create it
+    try {
+      const response = await FilePicker.browse('data', tokenFolder);
+      console.log('Token folder exists:', tokenFolder);
+    } catch (e) {
+      if (e.message.includes("does not exist")) {
+        await FilePicker.createDirectory('data', tokenFolder);
+        console.log('Created token folder:', tokenFolder);
+      } else {
+        console.error('Error checking token folder:', e);
+      }
+    }
+
     let mp3Files = await getCachedMP3Metadata(tokenFolder, token.name);
 
     // Always append the buttons
@@ -53,7 +66,7 @@ async function _onButtonClick(event, token, hud, mp3Files, tokenFolder) {
       // Add input box and create button
       const createContainer = $(`
         <div class="create-container">
-          <input type="text" class="create-input11" placeholder="Say what?">
+          <input type="text" class="create-input11" placeholder="Che dici?">
           <button class="create-button11">✔️</button>
         </div>
       `);
@@ -74,7 +87,7 @@ async function _onButtonClick(event, token, hud, mp3Files, tokenFolder) {
       const visibleFiles = mp3Files.filter(file => file.lyrics !== 'DELETED');
 
       if (visibleFiles.length === 0) {
-        wrapper.append('<div class="no-audio">No Recordings</div>');
+        wrapper.append('<div class="no-audio">Nessun Audio Trovato</div>');
       } else {
         for (const file of visibleFiles) {
           const filePath = `${tokenFolder}/${file.name}`;
@@ -123,10 +136,10 @@ function showEditDialog(filePath, file, tokenFolder, mp3Files) {
   const currentLyrics = file.lyrics;
 
   new Dialog({
-    title: "Edit Description",
+    title: "Edit Lyrics",
     content: `
       <div class="dialog-content">
-        <label for="lyrics">Description:</label>
+        <label for="lyrics">Lyrics:</label>
         <input type="text" name="lyrics" value="${currentLyrics}" />
       </div>
     `,
@@ -152,9 +165,9 @@ async function saveUpdatedFile(filePath, buffer) {
   const file = new File([buffer], filePath.split('/').pop(), { type: 'audio/mp3' });
   const response = await FilePicker.upload('data', filePath.substring(0, filePath.lastIndexOf('/')), file, {});
   if (response.path) {
-    ui.notifications.notify("Description updated successfully!");
+    ui.notifications.notify("Lyrics updated successfully!");
   } else {
-    ui.notifications.error("Failed to update Description.");
+    ui.notifications.error("Failed to update lyrics.");
   }
 }
 
