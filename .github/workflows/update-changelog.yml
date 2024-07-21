@@ -1,4 +1,4 @@
-name: Update Changelog
+name: Update Changelog Manual
 
 on:
   workflow_dispatch: # Allows manual triggering
@@ -14,6 +14,7 @@ jobs:
         id: fetch_releases
         run: |
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -s https://api.github.com/repos/${{ github.repository }}/releases > releases.json
+          cat releases.json # Debug: output the contents of releases.json
 
       - name: Generate changelog content
         id: generate_changelog
