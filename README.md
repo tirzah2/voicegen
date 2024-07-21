@@ -261,6 +261,9 @@ VoiceGen provides an API for programmatic interaction with the module. You can a
 ## Changelog
 
 <!-- changelog-start -->
+## 1.8.2
+**Full Changelog**: https://github.com/tirzah2/voicegen/compare/1.8.1...1.8.2
+
 ## 1.8.1
 
 
