@@ -13,7 +13,7 @@ var historyItems = [];
 Hooks.once('init', () => {
     game.settings.register("voicegen", "xi-api-keys", {
         name: "API Keys",
-        hint: "Your Elevenlabs API Keys (comma-separated)",
+        hint: "Your Elevenlabs API Keys (comma-separated), we suggest not to use more than one API key (in particular if you are using free api keys) as it's against ToS to use more than API key, check T&C of Elevenlabs if it's allowed to use multiple paid API keys",
         scope: "client",
         config: true,
         type: String,
@@ -27,7 +27,7 @@ Hooks.once('init', () => {
         scope: "client",
         config: true,
         type: String,
-        default: "", // Ensure a sensible default
+        default: "audiocollection/effects", // Ensure a sensible default
         filePicker: 'folder'  // This enables folder selection directly in the setting
     });
     
@@ -57,7 +57,7 @@ Hooks.once('init', () => {
         scope: "client",
         config: true,
         type: String,
-        default: "", // Set a default path or leave it empty for users to select
+        default: "audiocollection", // Set a default path or leave it empty for users to select
         filePicker: 'folder'  // This enables folder selection directly in the setting
     });
 
