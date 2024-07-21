@@ -21,6 +21,7 @@ VoiceGen is a Foundry VTT module that allows Game Masters (GMs) and players to g
    - [Editing Description](#editing-description)
 6. [Changelog](#changelog)
 7. [License](#license)
+8. [Credits](#credits) 
 
 ## Installation
 
@@ -259,6 +260,11 @@ VoiceGen provides an API for programmatic interaction with the module. You can a
 ### Version 1.7
 - Initial release with basic features for generating and managing token sounds and effects.
 
+
 ## License
 
 This module is licensed under the MIT License.
+
+## Credits
+
+For inspiration, a big thank you to Aedif's sound of token and Elevenlabs.io module by Vexthecollector
