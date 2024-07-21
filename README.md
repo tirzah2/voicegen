@@ -256,7 +256,7 @@ VoiceGen provides an API for programmatic interaction with the module. You can a
 
 ## Changelog
 
-### Version 1.0.0
+### Version 1.7
 - Initial release with basic features for generating and managing token sounds and effects.
 
 ## License
