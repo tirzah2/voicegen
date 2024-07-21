@@ -13,7 +13,7 @@ var historyItems = [];
 Hooks.once('init', () => {
     game.settings.register("voicegen", "xi-api-keys", {
         name: "API Keys",
-        hint: "Your Elevenlabs API Keys (comma-separated), we suggest not to use more than one API key (in particular if you are using free api keys) as it's against ToS to use more than API key, check T&C of Elevenlabs if it's allowed to use multiple paid API keys",
+        hint: "Your Elevenlabs API Keys (comma-separated)",
         scope: "client",
         config: true,
         type: String,
@@ -27,7 +27,7 @@ Hooks.once('init', () => {
         scope: "client",
         config: true,
         type: String,
-        default: "audiocollection/effects", // Ensure a sensible default
+        default: "", // Ensure a sensible default
         filePicker: 'folder'  // This enables folder selection directly in the setting
     });
     
@@ -57,7 +57,7 @@ Hooks.once('init', () => {
         scope: "client",
         config: true,
         type: String,
-        default: "audiocollection", // Set a default path or leave it empty for users to select
+        default: "", // Set a default path or leave it empty for users to select
         filePicker: 'folder'  // This enables folder selection directly in the setting
     });
 
@@ -120,7 +120,7 @@ export function Play_Sound_HUD(lyrics, tokenName) {
       if (voice) {
         Text_To_Speech(voice.voice_id, lyrics);
       } else {
-        ui.notifications.error(`Voice for token '${tokenName}' not found.`);
+        ui.notifications.error(`Voice for token '${tokenName}' not found. Visit <a href="https://www.elevenlabs.io/" target="_blank">https://www.elevenlabs.io/</a> and create a voice named '${tokenName}'. Also, remember to refresh both elevenlabs and foundry by pressing F5`);
       }
     } else {
       Set_Key_Window();
