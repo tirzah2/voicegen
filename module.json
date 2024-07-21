@@ -7,7 +7,8 @@
   "download": "https://github.com/tirzah2/voicegen/releases/download/1.6/module.zip",
   "compatibility": {
     "minimum": 11,
-    "verified": 11
+    "verified": 11,
+    "maximum": 11
   },
   "authors": [
     {
@@ -22,6 +23,7 @@
   "packs": [],
   "socket": true,
   "relationships": {
+    "systems": [],
     "requires": [
       {
         "id": "lib-wrapper",
