@@ -66,7 +66,7 @@ async function _onButtonClick(event, token, hud, mp3Files, tokenFolder) {
       // Add input box and create button
       const createContainer = $(`
         <div class="create-container">
-          <input type="text" class="create-input11" placeholder="Che dici?">
+          <input type="text" class="create-input11" placeholder="Say what?">
           <button class="create-button11">✔️</button>
         </div>
       `);
