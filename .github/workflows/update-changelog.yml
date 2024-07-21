@@ -3,6 +3,9 @@ name: Update Changelog Manual
 on:
   workflow_dispatch: # Allows manual triggering
 
+permissions:
+  contents: write # Grant write permissions for the repository contents
+
 jobs:
   update-changelog:
     runs-on: ubuntu-latest
