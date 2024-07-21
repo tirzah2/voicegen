@@ -1,0 +1,43 @@
+name: Update Changelog
+
+on:
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Fetch all releases
+        id: fetch_releases
+        run: |
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -s https://api.github.com/repos/${{ github.repository }}/releases > releases.json
+
+      - name: Generate changelog content
+        id: generate_changelog
+        run: |
+          changelog=""
+          releases=$(jq -c '.[]' releases.json)
+          for release in $releases; do
+            release_notes=$(echo $release | jq -r '.body')
+            release_tag=$(echo $release | jq -r '.tag_name')
+            changelog+="## $release_tag\n$release_notes\n\n"
+          done
+          echo "::set-output name=changelog::$changelog"
+
+      - name: Update README with Changelog
+        run: |
+          sed -i '/<!-- changelog-start -->/,/<!-- changelog-end -->/{//!d}' README.md
+          sed -i "/<!-- changelog-start -->/a ${{ steps.generate_changelog.outputs.changelog }}" README.md
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add README.md
+          git commit -m "Update changelog manually"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
