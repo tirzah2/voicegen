@@ -28,10 +28,10 @@ jobs:
           for release in $releases; do
             release_notes=$(echo $release | jq -r '.body')
             release_tag=$(echo $release | jq -r '.tag_name')
-            changelog="${changelog}\n## ${release_tag}\n${release_notes}\n"
+            changelog="${changelog}\n## ${release_tag}\n${release_notes//\\/\\\\}\n"
           done
           echo "Generated changelog content:"
-          echo "$changelog" # Debug: output the generated changelog content
+          echo -e "$changelog" # Debug: output the generated changelog content
           echo "::set-output name=changelog::$changelog"
 
       - name: Update README with Changelog
@@ -48,3 +48,4 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
