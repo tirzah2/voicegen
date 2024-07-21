@@ -2,9 +2,9 @@
   "id": "voicegen",
   "title": "VoiceGen",
   "description": "Play tokens voices using Elevenlabs.",
-  "version": "1.0",
-  "manifest": "",
-  "download": "",
+  "version": "1.4",
+  "manifest": "https://github.com/tirzah2/voicegen/releases/download/1.4/module.json",
+  "download": "https://github.com/tirzah2/voicegen/releases/download/1.4/module.zip",
   "compatibility": {
     "minimum": 11,
     "verified": 11
@@ -29,6 +29,6 @@
       }
     ]
   },
-  "url": "",
-  "readme": ""
+  "url": "https://github.com/tirzah2/voicegen",
+  "readme": "https://github.com/tirzah2/voicegen/blob/da02b55dc6ec5a26e33a97b04c48ee4be7472a39/README.md"
 }
