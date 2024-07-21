@@ -1,0 +1,34 @@
+{
+  "id": "voicegen",
+  "title": "VoiceGen",
+  "description": "Play tokens voices using Elevenlabs.",
+  "version": "1.0",
+  "manifest": "",
+  "download": "",
+  "compatibility": {
+    "minimum": 11,
+    "verified": 11
+  },
+  "authors": [
+    {
+      "name": "Kaleth",
+      "url": "",
+      "discord": "DMKal"
+    }
+  ],
+  "esmodules": ["main.js", "token-sounds.js"],
+  "scripts": [],
+  "styles": ["styles/token-sounds.css"],
+  "packs": [],
+  "socket": true,
+  "relationships": {
+    "requires": [
+      {
+        "id": "lib-wrapper",
+        "type": "module"
+      }
+    ]
+  },
+  "url": "",
+  "readme": ""
+}
