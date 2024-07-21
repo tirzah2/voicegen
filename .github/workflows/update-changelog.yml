@@ -20,24 +20,13 @@ jobs:
       - name: Generate changelog content
         id: generate_changelog
         run: |
-          changelog=""
-          releases=$(jq -c '.[]' releases.json)
-          echo "Releases JSON objects:"
-          echo "$releases" # Debug: output each release JSON object
-
-          for release in $releases; do
-            release_notes=$(echo $release | jq -r '.body')
-            release_tag=$(echo $release | jq -r '.tag_name')
-            changelog="${changelog}\n## ${release_tag}\n${release_notes//\\/\\\\}\n"
-          done
-          echo "Generated changelog content:"
-          echo -e "$changelog" # Debug: output the generated changelog content
-          echo "::set-output name=changelog::$changelog"
+          python3 generate_changelog.py > changelog.txt
 
       - name: Update README with Changelog
         run: |
+          changelog=$(cat changelog.txt)
           sed -i '/<!-- changelog-start -->/,/<!-- changelog-end -->/{//!d}' README.md
-          sed -i "/<!-- changelog-start -->/a ${{ steps.generate_changelog.outputs.changelog }}" README.md
+          sed -i "/<!-- changelog-start -->/a $changelog" README.md
 
       - name: Commit and Push Changes
         run: |
