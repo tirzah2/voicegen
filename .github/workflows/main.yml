@@ -24,15 +24,10 @@ jobs:
           manifest: https://github.com/${{ github.repository }}/releases/latest/download/module.json
           download: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/module.zip
 
-      # Install packages.
-      - run: npm install
-
-      # Build distribution.
-      - run: npm run build
-
       - run: mkdir package
 
-      - run: mv -v ./dist/* ./package/
+      # Move necessary files to the package directory
+      - run: mv -v module.json LICENSE main.js token-sounds.js styles/token-sounds.css package/
 
       # Create a zip file with all files required by the module to add to the release
       - run: (cd package && zip -r "$OLDPWD/module.zip" .)
