@@ -39,127 +39,7 @@ export function registerTokenHooks() {
   });
 }
 
-function addCustomCSS() {
-  const css = `
-    .token-sounds-wrapper {
-      max-height: 300px;
-      overflow-y: auto;
-      display: inline-block;
-      background-color: #a33552; /* Adjust as needed */
-      padding: 10px;
-      border-radius: 5px;
-      overflow-x: hidden;
-    }
-    .voice-icon {
-          display: flex;
-      align-items: center;
-      padding: 5px;
-      margin-bottom: 5px;
-      border-radius: 5px;
-      width: 100%;
-      background-color: #6189d39e; /* Special color for 'voice' files */
-    }
-          .voice-icon span {
-      display: inline-grid;
-      font-size: 12px;
-      color: black;
-      width: 100%;
-      line-height: 14px;
-      word-wrap: break-word;
-      height: 50px;
-      justify-content: start;
-      align-content: space-between;
-          justify-items: start;
-    }
-    .no-audio {
-      color: #ffffff;
-      text-align: center;
-      padding: 10px;
-      font-size: 14px;
-    }
-
-    .sound-icon {
-      display: flex;
-      align-items: center;
-      padding: 5px;
-      margin-bottom: 5px;
-background-color: #8dae68;
-      border-radius: 5px;
-      width: 100%;
-    }
-
-    .sound-icon i {
-      margin-right: 10px;
-    }
-.voice-icon:hover {
-    background-color: #9b61d39e;
-}
-    .sound-icon:hover {
-    background-color: #d5e160;
-}
-    .sound-icon span {
-      display: inline-grid;
-      font-size: 12px;
-      color: black;
-      width: 100%;
-      line-height: 14px;
-      word-wrap: break-word;
-      height: 50px;
-      justify-content: start;
-      align-content: space-between;
-    }
-
-    .delete-icon {
-      margin-right: -120px;
-      color: red;
-      cursor: pointer;
-    }
-
-    .dialog-content {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .dialog-content label {
-      margin-bottom: 5px;
-    }
-
-    .dialog-content input {
-      margin-bottom: 10px;
-    }
-
-    .create-container {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .create-input11 {
-      flex: 1;
-      padding: 5px;
-      margin-right: 5px;
-          font-size: 16px;
-    background: rgba(0, 0, 0, 0.5);
-    margin-right: 5px;
-    }
-
-    .create-button11 {
-      padding: 0px 0px;
-      width: 23px;
-      height: 31px;
-      background: rgb(221 48 156 / 46%);
-      border: 2px groove var(--color-border-light-highlight);
-    }
-  `;
-  const style = document.createElement('style');
-  style.type = 'text/css';
-  style.appendChild(document.createTextNode(css));
-  document.head.appendChild(style);
-}
-
 async function _onButtonClick(event, token, hud, mp3Files, tokenFolder) {
-  addCustomCSS();
-
   const button = $(event.target).closest('.control-icon');
   button.toggleClass('active');
   hud._soundBoard.active = button.hasClass('active');
@@ -203,7 +83,7 @@ async function _onButtonClick(event, token, hud, mp3Files, tokenFolder) {
           const isVoiceFile = file.lyrics.toLowerCase().startsWith('effetto') || file.lyrics.toLowerCase().startsWith('effect');
           const sparklesIcon = isVoiceFile ? '<i class="fas fa-sparkles"></i> ' : '';
           const soundIconClass = isVoiceFile ? 'voice-icon' : 'sound-icon';
-      
+
           const icon = $(`
             <div class="${soundIconClass}" title="${lyrics}">
               <i class="fas fa-play"></i>
