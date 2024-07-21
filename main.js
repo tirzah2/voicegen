@@ -99,7 +99,8 @@ Hooks.once('setup', () => {
         sleep,
         Create_Window,
         Set_Key,
-        Set_Key_Window
+        Set_Key_Window,
+        Voice_Exists
     };
 });
 
@@ -555,4 +556,7 @@ async function Set_Key_Window() {
         await game.settings.set("voicegen", "selected-api-key", new_key.trim());
         Initialize_Main();
     }
+}
+function Voice_Exists(voiceName) {
+    return all_Voices.voices.some(voice => voice.name === voiceName);
 }
