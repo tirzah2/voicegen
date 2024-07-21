@@ -87,7 +87,13 @@ async function _onButtonClick(event, token, hud, mp3Files, tokenFolder) {
       const visibleFiles = mp3Files.filter(file => file.lyrics !== 'DELETED');
 
       if (visibleFiles.length === 0) {
-        wrapper.append('<div class="no-audio">Nessun Audio Trovato</div>');
+        // Check if voice exists
+        const voiceExists = game.modules.get('voicegen').api.Voice_Exists(token.name);
+        let noAudioMessage = 'No Audio Found';
+        if (!voiceExists) {
+          noAudioMessage += ` and there is No Voice with the name (${token.name})`;
+        }
+        wrapper.append(`<div class="no-audio">${noAudioMessage}</div>`);
       } else {
         for (const file of visibleFiles) {
           const filePath = `${tokenFolder}/${file.name}`;
