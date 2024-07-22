@@ -2,6 +2,7 @@ export function registerTokenHooks() {
     Hooks.on('renderTokenHUD', async (hud, html, token) => {
         const actor = game.actors.get(token.actorId);
         if (!actor) return;
+        
         console.log('Rendering Token HUD for token:', token.name);
         if (!hud._soundBoard || hud._soundBoard.id !== hud.object.id)
             hud._soundBoard = { id: hud.object.id, active: false };
@@ -44,7 +45,9 @@ export function registerTokenHooks() {
         refreshButton.click(async (event) => {
             mp3Files = await refreshMP3Metadata(tokenFolder, token.name);
             if (hud._soundBoard.active) {
-                _onButtonClick(event, token, hud, mp3Files, tokenFolder, actor.type === 'character');
+                hud._soundBoard.active = false;
+                button.removeClass('active');
+                button.find('.token-sounds-wrapper').remove();
             }
         });
 
@@ -92,7 +95,7 @@ function createCharacterSoundUI(wrapper, token, tokenFolder, mp3Files) {
     createContainer.find('.create-button11').click(() => {
         const lyrics = createContainer.find('.create-input11').val();
         if (lyrics) {
-            game.modules.get('voicegen').api.Play_Sound_HUD(lyrics, token.name);
+            game.modules.get('voicegen').api.Play_Sound_HUD(lyrics, token);
             createContainer.find('.create-input11').val('');
         }
     });
@@ -137,13 +140,30 @@ function displayMp3Files(wrapper, token, tokenFolder, mp3Files, isCharacter) {
 
     if (visibleFiles.length === 0) {
         let noAudioMessage = 'No Audio Found';
+        let voiceNameToUse = null;
+
         if (isCharacter) {
-            // Check if voice exists only for characters
+            // Check if voice exists with the same name as the token
             const voiceExists = game.modules.get('voicegen').api.Voice_Exists(token.name);
             if (!voiceExists) {
-                noAudioMessage += ` and there is No Voice with the name (${token.name})`;
+                // Check for voice tags
+                const tokenDocument = canvas.tokens.get(token._id); // Get the token document
+                const tags = Tagger.getTags(tokenDocument);
+                const voiceTag = tags.find(tag => tag.startsWith('voice:'));
+                if (voiceTag) {
+                    const taggedVoiceName = voiceTag.split(':')[1];
+                    if (game.modules.get('voicegen').api.Voice_Exists(taggedVoiceName)) {
+                        noAudioMessage += ` and there is No Voice with the name (${token.name}) using tagged voice: ${taggedVoiceName}`;
+                        voiceNameToUse = taggedVoiceName;
+                    } else {
+                        noAudioMessage += ` and there is No Voice with the name (${token.name}) or tagged voice: ${taggedVoiceName}`;
+                    }
+                } else {
+                    noAudioMessage += ` and there is No Voice with the name (${token.name})`;
+                }
             }
         }
+
         wrapper.append(`<div class="no-audio">${noAudioMessage}</div>`);
     } else {
         for (const file of visibleFiles) {
@@ -172,7 +192,20 @@ function displayMp3Files(wrapper, token, tokenFolder, mp3Files, isCharacter) {
                         // Check if voice exists only for characters
                         const voiceExists = game.modules.get('voicegen').api.Voice_Exists(token.name);
                         if (!voiceExists) {
-                            noAudioMessage += ` and there is No Voice with the name (${token.name})`;
+                            // Check for voice tags
+                            const tokenDocument = canvas.tokens.get(token._id); // Get the token document
+                            const tags = Tagger.getTags(tokenDocument);
+                            const voiceTag = tags.find(tag => tag.startsWith('voice:'));
+                            if (voiceTag) {
+                                const taggedVoiceName = voiceTag.split(':')[1];
+                                if (game.modules.get('voicegen').api.Voice_Exists(taggedVoiceName)) {
+                                    noAudioMessage += ` and there is No Voice with the name (${token.name}) using tagged voice: ${taggedVoiceName}`;
+                                } else {
+                                    noAudioMessage += ` and there is No Voice with the name (${token.name}) or tagged voice: ${taggedVoiceName}`;
+                                }
+                            } else {
+                                noAudioMessage += ` and there is No Voice with the name (${token.name})`;
+                            }
                         }
                     }
                     wrapper.append(`<div class="no-audio">${noAudioMessage}</div>`);
@@ -191,6 +224,8 @@ function displayMp3Files(wrapper, token, tokenFolder, mp3Files, isCharacter) {
         }
     }
 }
+
+
 
 function showEditDialog(filePath, file, tokenFolder, mp3Files) {
     const currentLyrics = file.lyrics;
