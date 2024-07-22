@@ -10,6 +10,7 @@ VoiceGen is a Foundry VTT V11 module that allows Game Masters (GMs) and players 
 3. [Features](#features)
    - [Token Voices](#token-voices)
    - [Token Effects](#token-effects)
+   - [Token Voices for NPC](#token-npc) 
    - [History](#history)
    - [API](#api)
    - [Change Description](#change-description)
@@ -48,7 +49,7 @@ To configure these settings:
 ## Features
 
 ### Token Voices
-VoiceGen allows you to generate and manage voices associated with tokens on the map. This includes playing sounds (through HUD) , generating speech (through HUD), and editing sound details (right click on sound description).
+VoiceGen allows you to generate and manage voices associated with tokens on the map. This includes playing sounds (through HUD) , generating speech (through HUD), and editing sound details (right click on sound description). If the token name has a voice in elevenlabs with the same name, it will automatically assign it to that token. Unless you want a different voice name, then use Tagger module to add the tag voice:voicename to the token.
 <br>
 <img src="screenshots/Screenshot_1.png" alt="Screenshot 1" width="50%">
 
@@ -57,6 +58,9 @@ Select a token to which you want to add an effect, in the chat write /effect [de
 example: /effect [the sound of a man suffering] (4) suffering.mp3
 Generate sound effects associated with specific tokens, saving them in a designated folder. If a token is selected, the effect will be saved in a subfolder named after the token.
 (easter egg: if you change the description to something that start with "effect" the button will become green)
+
+### Token Voices for NPC
+When you right click on a npc you will have a list of all your voices and you can use anyone to create a speech. 
 
 ### History
 command /history
