@@ -104,18 +104,38 @@ async function Get_Userdata() {
     }).then(response => response.text()).then(text => JSON.parse(text))
 }
 
-export function Play_Sound_HUD(lyrics, tokenName) {
+export function Play_Sound_HUD(lyrics, token) {
     if (selected_api_key) {
-        let voice = all_Voices.find(obj => obj.name === tokenName);
+        // Check if a voice with the same name as the token exists
+        let voice = all_Voices.find(obj => obj.name === token.name);
+
+        // If no voice with the token's name exists, check for a voice tag
+        if (!voice) {
+            const tokenDocument = canvas.tokens.get(token._id); // Get the token document
+            const tags = Tagger.getTags(tokenDocument);
+            const voiceTag = tags.find(tag => tag.startsWith('voice:'));
+            if (voiceTag) {
+                const voiceName = voiceTag.split(':')[1];
+                voice = all_Voices.find(obj => obj.name === voiceName);
+                if (voice) {
+                    ui.notifications.info(`Using tagged voice: ${voiceName}`);
+                }
+            }
+        }
+
         if (voice) {
-            Text_To_Speech(voice.voice_id, lyrics, tokenName);
+            Text_To_Speech(voice.voice_id, lyrics, token.name);
         } else {
-            ui.notifications.error(`Voice for token '${tokenName}' not found. Visit <a href="https://www.elevenlabs.io/" target="_blank">https://www.elevenlabs.io/</a> and create a voice named '${tokenName}'. Also, remember to refresh both elevenlabs and foundry by pressing F5`);
+            ui.notifications.error(`Voice for token '${token.name}' not found. Visit <a href="https://www.elevenlabs.io/" target="_blank">https://www.elevenlabs.io/</a> and create a voice named '${token.name}'. Also, remember to refresh both elevenlabs and foundry by pressing F5`);
         }
     } else {
         Set_Key_Window();
     }
 }
+
+
+
+
 
 function Play_Sound(message) {
     if (message.startsWith("/playsound")) {
