@@ -1,3 +1,6 @@
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D1D210UKH9)  
+
 # VoiceGen Module
 
 VoiceGen is a Foundry VTT V11 module that allows Game Masters (GMs) and players (they need to have permissions to create files and browse files) to generate and manage sounds, including speech and sound effects, associated with tokens on the map. The module integrates with the ElevenLabs API to generate and play audio effects and manage them efficiently within the game.
