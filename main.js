@@ -132,9 +132,9 @@ async function Get_Userdata() {
 
 export function Play_Sound_HUD(lyrics, tokenName) {
     if (selected_api_key) {
-        let voice = all_Voices.voices.find(obj => obj.name === tokenName);
+        let voice = all_Voices.find(obj => obj.name === tokenName);
         if (voice) {
-            Text_To_Speech(voice.voice_id, lyrics);
+            Text_To_Speech(voice.voice_id, lyrics, tokenName);
         } else {
             ui.notifications.error(`Voice for token '${tokenName}' not found. Visit <a href="https://www.elevenlabs.io/" target="_blank">https://www.elevenlabs.io/</a> and create a voice named '${tokenName}'. Also, remember to refresh both elevenlabs and foundry by pressing F5`);
         }
@@ -149,9 +149,9 @@ function Play_Sound(message) {
             let voiceName = message.substring(message.indexOf("[") + 1, message.indexOf("]"));
             let text = message.substring(message.indexOf("]") + 1).trim(); // This is the description text
 
-            let voice = all_Voices.voices.find(obj => obj.name === voiceName);
+            let voice = all_Voices.find(obj => obj.name === voiceName);
             if (voice) {
-                Text_To_Speech(voice.voice_id, text);  // Pass the text as both the TTS input and as the description for the ID3 tags
+                Text_To_Speech(voice.voice_id, text, voiceName);  // Pass the text as both the TTS input and as the description for the ID3 tags
             } else {
                 ui.notifications.error(`Voice '${voiceName}' not found.`);
             }
@@ -187,6 +187,7 @@ function Play_Sound(message) {
     }
 }
 
+
 async function runPlaySound(chunks) {
     let blob = new Blob(chunks, { type: 'audio/mpeg' })
     let url = window.URL.createObjectURL(blob)
@@ -194,13 +195,21 @@ async function runPlaySound(chunks) {
 }
 
 async function Get_Voices() {
-    await fetch('https://api.elevenlabs.io/v1/voices', {
+    const response = await fetch('https://api.elevenlabs.io/v1/voices', {
         headers: {
             'accept': 'application/json',
             'xi-api-key': selected_api_key
         }
-    }).then(response => response.text()).
-        then(text => all_Voices = JSON.parse(text))
+    });
+
+    if (!response.ok) {
+        console.error(`Error: ${response.statusText}`);
+        return [];
+    }
+
+    const data = await response.json();
+    all_Voices = data.voices;
+    return all_Voices;
 }
 
 async function Generate_Sound_Effect(effectDescription, filename, duration = 3) {
@@ -322,7 +331,7 @@ async function getAmbientSoundOptions(path) {
     });
 }
 
-async function Text_To_Speech(voiceID, text) {
+async function Text_To_Speech(voiceID, text, tokenName) {
     const selectedModel = game.settings.get("voicegen", "selected-model");
 
     let container = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceID}`, {
@@ -344,13 +353,13 @@ async function Text_To_Speech(voiceID, text) {
     // Embedding ID3 Tags with the text as lyrics
     let modifiedBuffer = await embedLyrics(arrayBuffer, text);  // Pass ArrayBuffer directly
 
-    let voiceName = all_Voices.voices.find(v => v.voice_id === voiceID)?.name || 'Unknown';
     const baseSavePath = game.settings.get("voicegen", "save-voice-folder");
-    const voiceFolder = `${baseSavePath}/${voiceName.replace(/[\W_]+/g, "_")}`;
+    const voiceFolder = `${baseSavePath}/${tokenName.replace(/[\W_]+/g, "_")}`;
     const filename = `Voice-${Date.now()}.mp3`;
 
     saveFile(new Uint8Array(modifiedBuffer), `${voiceFolder}/${filename}`, true);
 }
+
 
 async function embedLyrics(arrayBuffer, description) {
     try {
@@ -558,5 +567,5 @@ async function Set_Key_Window() {
     }
 }
 function Voice_Exists(voiceName) {
-    return all_Voices.voices.some(voice => voice.name === voiceName);
+    return all_Voices && all_Voices.some(voice => voice.name === voiceName);
 }
