@@ -1,19 +1,13 @@
-var api_keys = [];
 var selected_api_key = "";
 var all_Voices;
-var answer;
-var isKeyOwner = false;
-var allowKeySharing = false;
-var voiceID;
-var voiceText;
 var subscriptionInfo;
 var button;
 var historyItems = [];
 
 Hooks.once('init', () => {
-    game.settings.register("voicegen", "xi-api-keys", {
-        name: "API Keys",
-        hint: "Your Elevenlabs API Keys (comma-separated)",
+    game.settings.register("voicegen", "xi-api-key", {
+        name: "API Key",
+        hint: "Your Elevenlabs API Key",
         scope: "client",
         config: true,
         type: String,
@@ -29,24 +23,6 @@ Hooks.once('init', () => {
         type: String,
         default: "", // Ensure a sensible default
         filePicker: 'folder'  // This enables folder selection directly in the setting
-    });
-
-    game.settings.register("voicegen", "selected-api-key", {
-        name: "Selected API Key",
-        hint: "Choose your active API Key",
-        scope: "client",
-        config: true,
-        type: String,
-        choices: () => {
-            let keys = game.settings.get("voicegen", "xi-api-keys") || "";
-            let keysArray = keys.split(",");
-            let choices = {};
-            keysArray.forEach((key, index) => {
-                choices[key.trim()] = `API Key ${index + 1}`;
-            });
-            return choices;
-        },
-        onChange: value => { Initialize_Main() }
     });
 
     game.settings.register("voicegen", "save-voice-folder", {
@@ -112,11 +88,9 @@ Hooks.on("ready", () => {
 })
 
 async function Initialize_Main() {
-    let keys = game.settings.get("voicegen", "xi-api-keys") || "";
-    api_keys = keys.split(",").map(key => key.trim()).filter(key => key);
-    selected_api_key = game.settings.get("voicegen", "selected-api-key");
+    selected_api_key = game.settings.get("voicegen", "xi-api-key");
     if (selected_api_key) {
-        Get_Voices();
+        await Get_Voices();
         Get_Userdata();
     }
 }
@@ -161,9 +135,9 @@ function Play_Sound(message) {
         return false;
     } else if (message.startsWith("/play")) {
         if (selected_api_key) {
-            doStuff()
+            doStuff();
         } else {
-            Set_Key_Window()
+            Set_Key_Window();
         }
         return false;
     } else if (message.startsWith("/effect")) {
@@ -178,7 +152,7 @@ function Play_Sound(message) {
                 ui.notifications.error("Invalid command format. Use /effect [description] (duration) filename.ext");
             }
         } else {
-            Set_Key_Window()
+            Set_Key_Window();
         }
         return false;
     } else if (message.startsWith("/history")) {
@@ -186,7 +160,6 @@ function Play_Sound(message) {
         return false;
     }
 }
-
 
 async function runPlaySound(chunks) {
     let blob = new Blob(chunks, { type: 'audio/mpeg' })
@@ -360,7 +333,6 @@ async function Text_To_Speech(voiceID, text, tokenName) {
     saveFile(new Uint8Array(modifiedBuffer), `${voiceFolder}/${filename}`, true);
 }
 
-
 async function embedLyrics(arrayBuffer, description) {
     try {
         const mp3tag = new MP3Tag(arrayBuffer, true);
@@ -421,23 +393,21 @@ async function saveFile(data, path, createSubDir = false) {
 
 async function Fetch_History() {
     historyItems = []; // Initialize as an empty array
-    for (let key of api_keys) {
-        const response = await fetch('https://api.elevenlabs.io/v1/history', {
-            method: 'GET',
-            headers: {
-                'accept': 'application/json',
-                'xi-api-key': key
-            }
-        });
-
-        if (!response.ok) {
-            console.error(`Error: ${response.statusText}`);
-            continue;
+    const response = await fetch('https://api.elevenlabs.io/v1/history', {
+        method: 'GET',
+        headers: {
+            'accept': 'application/json',
+            'xi-api-key': selected_api_key
         }
+    });
 
-        const data = await response.json();
-        historyItems = historyItems.concat(data.history);
+    if (!response.ok) {
+        console.error(`Error: ${response.statusText}`);
+        return;
     }
+
+    const data = await response.json();
+    historyItems = data.history;
 
     Show_History_Dialog();
 }
@@ -492,9 +462,13 @@ window.PlayHistoryItem = async function(history_item_id) {
 }
 
 async function Voice_Field() {
+    if (!all_Voices || !all_Voices.length) {
+        await Get_Voices();  // Ensure voices are loaded
+    }
+
     let allVoices_Voice_Field = "<select name=\"allVoices_Voice_Field\" id=\"allVoices_Voice_Field\">"
-    for (let i = (all_Voices.voices.length - 1); i > 0; i--) {
-        allVoices_Voice_Field += `<option value=${all_Voices.voices[i].voice_id}>${all_Voices.voices[i].name}</option>`
+    for (let i = (all_Voices.length - 1); i > 0; i--) {
+        allVoices_Voice_Field += `<option value=${all_Voices[i].voice_id}>${all_Voices[i].name}</option>`
     }
     allVoices_Voice_Field += "</select>"
 
@@ -521,7 +495,7 @@ function Send_Text_To_Speech() {
 }
 
 async function doStuff() {
-    Create_Window()
+    await Create_Window();
     await sleep(20)
     button = document.getElementById("Voice_Field_Get_Params");
     button.addEventListener("click", () => { Send_Text_To_Speech() })
@@ -558,14 +532,12 @@ async function Set_Key() {
 async function Set_Key_Window() {
     let new_key = await Set_Key();
     if (new_key) {
-        let keys = game.settings.get("voicegen", "xi-api-keys") || "";
-        keys = keys.split(",").map(key => key.trim()).filter(key => key); // Ensure keys are trimmed and filtered
-        keys.push(new_key.trim());
-        await game.settings.set("voicegen", "xi-api-keys", keys.join(","));
-        await game.settings.set("voicegen", "selected-api-key", new_key.trim());
+        await game.settings.set("voicegen", "xi-api-key", new_key.trim());
+        selected_api_key = new_key.trim();
         Initialize_Main();
     }
 }
+
 function Voice_Exists(voiceName) {
     return all_Voices && all_Voices.some(voice => voice.name === voiceName);
 }
