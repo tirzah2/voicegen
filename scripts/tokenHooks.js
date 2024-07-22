@@ -132,7 +132,6 @@ async function createNpcSoundUI(wrapper, token, tokenFolder, mp3Files) {
     displayMp3Files(wrapper, token, tokenFolder, mp3Files, false);
 }
 
-
 function displayMp3Files(wrapper, token, tokenFolder, mp3Files, isCharacter) {
     const visibleFiles = mp3Files.filter(file => file.lyrics !== 'DELETED');
 
