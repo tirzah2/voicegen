@@ -54,7 +54,11 @@ To configure these settings:
 ### Token Voices
 VoiceGen allows you to generate and manage voices associated with tokens on the map. This includes playing sounds (through HUD) , generating speech (through HUD), and editing sound details (right click on sound description). If the token name has a voice in elevenlabs with the same name, it will automatically assign it to that token. Unless you want a different voice name, then use Tagger module to add the tag voice:voicename to the token.
 <br>
-<img src="screenshots/Screenshot_1.png" alt="Screenshot 1" width="50%">
+
+
+https://github.com/user-attachments/assets/dc4b66fb-f701-4efe-8aa4-49c829604b48
+
+
 
 ### Token Effects
 Select a token to which you want to add an effect, in the chat write /effect [description] (duration) filename.mp3
