@@ -208,14 +208,15 @@ async function Get_Voices() {
 async function Generate_Sound_Effect(effectDescription, filename, duration = 3) {
     let savePath;
 
-    // Check if there is a selected token
+    // Extract the filename without the extension for lyric embedding
+    let filenameNoExt = filename.replace(/\.[^/.]+$/, "");
+
+    // Determine the appropriate save path based on token selection
     const selectedToken = canvas.tokens.controlled[0];
     if (selectedToken) {
-        // Use the save-voice-folder when a token is selected
         const saveBasePath = game.settings.get("voicegen", "save-voice-folder");
         savePath = `${saveBasePath}/${selectedToken.name}`;
     } else {
-        // Use the save-effect-folder when no token is selected
         savePath = game.settings.get("voicegen", "save-effect-folder");
     }
 
@@ -227,8 +228,8 @@ async function Generate_Sound_Effect(effectDescription, filename, duration = 3) 
         },
         body: JSON.stringify({
             "text": effectDescription,
-            "duration_seconds": duration,  // Optional, default value
-            "prompt_influence": 0.3  // Optional, default value
+            "duration_seconds": duration,
+            "prompt_influence": 0.3
         })
     });
 
@@ -237,20 +238,17 @@ async function Generate_Sound_Effect(effectDescription, filename, duration = 3) 
         return;
     }
 
-    const reader = response.body.getReader();
-    let chunks = [];
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-    }
-
-    const blob = new Blob(chunks, { type: 'audio/mpeg' });
+    // Read the response as a blob and convert to ArrayBuffer for manipulation
+    const blob = await response.blob();
     const arrayBuffer = await blob.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
-    saveFile(buffer, `${savePath}/${filename}`);
 
-    // Show the dialog to create the AmbientSound using the path from settings
+    // Embed the lyric "Effect: filename" into the MP3 tags
+    let modifiedBuffer = await embedLyrics(arrayBuffer, `Effect: ${filenameNoExt}`);
+
+    // Save the modified MP3 file to the specified directory
+    saveFile(new Uint8Array(modifiedBuffer), `${savePath}/${filename}`);
+
+    // Optionally, prompt the user to create an ambient sound with this file
     if (game.user.isGM) {
         new Dialog({
             title: "Create Ambient Sound",
@@ -272,12 +270,13 @@ async function Generate_Sound_Effect(effectDescription, filename, duration = 3) 
                 },
                 no: {
                     label: "No",
-                    callback: () => { }
+                    callback: () => {}
                 }
             }
         }).render(true);
     }
 }
+
 
 async function getAmbientSoundOptions(path) {
     return new Promise((resolve) => {
@@ -355,7 +354,7 @@ async function Text_To_Speech(voiceID, text, tokenName) {
 
 async function embedLyrics(arrayBuffer, description) {
     try {
-        const mp3tag = new MP3Tag(arrayBuffer, true);
+        const mp3tag = new MP3Tag(arrayBuffer);
         mp3tag.read();
 
         if (mp3tag.error !== '') {
