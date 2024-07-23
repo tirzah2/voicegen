@@ -83,7 +83,7 @@ function createCharacterSoundUI(wrapper, token, tokenFolder, mp3Files) {
     const createContainer = $(`
         <div class="create-container">
             <input type="text" class="create-input11" placeholder="Say what?">
-            <button class="create-button11">✔️</button>
+            <button class="create-button11">Create Voice</button>
         </div>
     `);
     wrapper.append(createContainer);
@@ -97,10 +97,11 @@ function createCharacterSoundUI(wrapper, token, tokenFolder, mp3Files) {
         if (lyrics) {
             game.modules.get('voicegen').api.Play_Sound_HUD(lyrics, token);
             createContainer.find('.create-input11').val('');
+            deactivateTokenSoundsWrapper(wrapper);
         }
     });
 
-    displayMp3Files(wrapper, token, tokenFolder, mp3Files, true);
+    displayMp3Files(wrapper, token, tokenFolder, mp3Files, true, true);
 }
 
 async function createNpcSoundUI(wrapper, token, tokenFolder, mp3Files) {
@@ -126,16 +127,24 @@ async function createNpcSoundUI(wrapper, token, tokenFolder, mp3Files) {
         const lyrics = createContainer.find('.create-input11').val();
         if (lyrics) {
             await game.modules.get('voicegen').api.Text_To_Speech(selectedVoice, lyrics, token.name);
-            const newMp3Files = await refreshMP3Metadata(tokenFolder, token.name);
-            displayMp3Files(wrapper, token, tokenFolder, newMp3Files, false);
+            //const newMp3Files = await refreshMP3Metadata(tokenFolder, token.name);
+            //displayMp3Files(wrapper, token, tokenFolder, newMp3Files, false);
             createContainer.find('.create-input11').val('');
+            deactivateTokenSoundsWrapper(wrapper);
         }
     });
 
-    displayMp3Files(wrapper, token, tokenFolder, mp3Files, false);
+    displayMp3Files(wrapper, token, tokenFolder, mp3Files, false, true);
 }
 
-function displayMp3Files(wrapper, token, tokenFolder, mp3Files, isCharacter) {
+function deactivateTokenSoundsWrapper(wrapper) {
+    // Assuming the active class or attribute needs to be toggled
+    let tokenSoundsWrapper = wrapper.find('.token-sounds-wrapper');
+    if (tokenSoundsWrapper.length) {
+        tokenSoundsWrapper.removeClass('active'); // Adjust this line based on how "active" state is managed
+    }
+}
+function displayMp3Files(wrapper, token, tokenFolder, mp3Files, isCharacter, keepWrapperInactive = false) {
     const switchHTML = `
         <div class="switch-toggle switch-3 switch-candy">
             <input id="fx" name="state-d" type="radio" />
@@ -153,15 +162,66 @@ function displayMp3Files(wrapper, token, tokenFolder, mp3Files, isCharacter) {
 
     wrapper.prepend(switchHTML);
 
-    // Initial filter and render
-    renderFilteredSounds('all', wrapper, token, tokenFolder, mp3Files, isCharacter);
+    // Control the visibility of the token-sounds-wrapper based on the parameter
+    if (keepWrapperInactive) {
+        let tokenSoundsWrapper = wrapper.find('.token-sounds-wrapper');
+        if (tokenSoundsWrapper.length) {
+            tokenSoundsWrapper.removeClass('active');
+        }
+    }
 
-    // Event listener for switch
+    renderFilteredSounds('all', wrapper, token, tokenFolder, mp3Files, isCharacter);
+    toggleFxForm('all', wrapper, token);
     $('input[name="state-d"]').change(function () {
         const selectedFilter = $('input[name="state-d"]:checked').attr('id');
         renderFilteredSounds(selectedFilter, wrapper, token, tokenFolder, mp3Files, isCharacter);
+        toggleFxForm(selectedFilter, wrapper, token);
     });
 }
+
+
+
+
+function toggleFxForm(filter, wrapper, token) {
+    // Handle FX form visibility
+    wrapper.find('.fx-form').remove(); // Remove existing FX form if any
+
+    if (filter === 'fx') {
+        const fxFormHtml = `
+            <div class="fx-form">
+                <input type="text" id="fx-description" placeholder="Description" />
+<input type="number" id="fx-duration" placeholder="Duration (sec)" min="1" max="10" style="color: white;" />
+                <input type="text" id="fx-filename" placeholder="Filename" pattern="[A-Za-z0-9]+" />
+                <button class="create-button11" onclick="createEffectFromForm('${token.id}')">Create Effect</button>
+            </div>
+        `;
+        wrapper.find('.switch-toggle').after(fxFormHtml);
+        $('#fx-description, #fx-duration, #fx-filename, #fx-create-button').on('click keydown', function(event) {
+            event.stopPropagation();
+        });
+    }
+
+    // Handle create container visibility based on VOX selection
+    if (filter === 'vox') {
+        wrapper.find('.create-container').show(); // Show the create container for VOX
+    } else {
+        wrapper.find('.create-container').hide(); // Hide it for others
+    }
+}
+
+window.createEffectFromForm = function(tokenId) {
+    const description = document.getElementById('fx-description').value.trim();
+    const duration = parseInt(document.getElementById('fx-duration').value, 10);
+    const filename = document.getElementById('fx-filename').value.trim().replace(/\W+/g, ''); // Removes non-alphanumeric characters
+
+    if (!description || !filename || isNaN(duration)) {
+        ui.notifications.error("Please fill all fields correctly.");
+        return;
+    }
+
+    // Call Generate_Sound_Effect or your API logic here
+    game.modules.get('voicegen').api.Generate_Sound_Effect(description, `${filename}.mp3`, duration);
+};
 
 function renderFilteredSounds(filter, wrapper, token, tokenFolder, mp3Files, isCharacter) {
     const visibleFiles = mp3Files.filter(file => {
