@@ -67,16 +67,19 @@
 }
 
 .voice-icon span {
-  display: inline-grid;
+  display: inline-block;
   font-size: 12px;
   color: black;
   width: 100%;
   line-height: 14px;
   word-wrap: break-word;
   height: 50px;
-  justify-content: start;
-  align-content: space-between;
+  /* justify-content: start; */
+  /* align-content: flex-start; */
   justify-items: start;
+  text-align: left;
+  margin-left: 5px;
+  margin-bottom: 5px;
 }
 
 .no-audio {
@@ -109,15 +112,18 @@
 }
 
 .sound-icon span {
-  display: inline-grid;
+  display: inline-block;
   font-size: 12px;
   color: black;
   width: 100%;
   line-height: 14px;
   word-wrap: break-word;
   height: 50px;
-  justify-content: start;
-  align-content: space-between;
+  text-align: left;
+  justify-items: start;
+  /* align-content: space-between; */
+  margin-left: 5px;
+  margin-bottom: 5px;
 }
 
 .delete-icon {
