@@ -78,6 +78,11 @@ NOW PART OF THE HUD
 Generate sound effects associated with specific tokens, saving them in a designated folder. If a token is selected, the effect will be saved in a subfolder named after the token.
 (easter egg: if you change the description to something that start with "effect" the button will become green)
 
+### Scene Effects
+/effect [a chant of witches in the forest] (10) suffering.mp3
+By writing a command like this, it will create it inside the effect folder (make sure a token is not selected or it will create it in the token folder).
+After the creation, it will ask you if you want to place it on the scene and guide you with a config dialog and a crosshair for placement.
+
 ### Token Voices for NPC
 When you right click on a npc you will have a list of all your voices and you can use anyone to create a speech. 
 
@@ -86,127 +91,6 @@ command /history
 Maintain a history of generated sounds for easy reference and playback.
 <br>
   <img src="screenshots/Screenshot_2.png" alt="Screenshot 1" width="20%">
-### API
-VoiceGen provides an API for programmatic interaction with the module.
-
-### Change Description
-Edit the Description of existing sound files directly within Foundry VTT.
-
-## Functions
-
-### Generate_Sound_Effect
-
-Generates a sound effect and saves it in the appropriate folder based on whether a token is selected.
-
-**Parameters**:
-- `effectDescription`: Description of the sound effect.
-- `filename`: Name of the file to save the sound effect as.
-- `duration`: Duration of the sound effect in seconds (default: 3).
-
-### Play_Sound
-
-Handles various sound-related commands.
-
-**Parameters**:
-- `message`: The command message to process.
-
-### Play_Sound_HUD
-
-Generates and plays a sound based on the provided Description and token name.
-
-**Parameters**:
-- `lyrics`: The Description for the sound.
-- `tokenName`: The name of the token.
-
-### Get_Userdata
-
-Fetches user data from the ElevenLabs API.
-
-### Get_Voices
-
-Fetches available voices from the ElevenLabs API.
-
-### saveFile
-
-Saves a file to the specified path.
-
-**Parameters**:
-- `buffer`: The file data.
-- `filePath`: The path to save the file.
-
-### markFileAsDeleted
-
-Marks a file as deleted by changing its Description to "DELETED". Remember that foundry cannot delete files, so the audio file is still inside the folder but won't show up in the HUD as it's marked DELETED.
-
-**Parameters**:
-- `filePath`: The path of the file.
-- `file`: The file metadata.
-- `tokenFolder`: The folder of the token.
-- `mp3Files`: The list of mp3 files.
-
-### saveUpdatedLyrics
-
-Updates the Description of a file and saves it.
-
-**Parameters**:
-- `filePath`: The path of the file.
-- `newLyrics`: The new Description.
-
-### refreshMP3Metadata
-
-Refreshes the metadata of mp3 files.
-
-**Parameters**:
-- `tokenFolder`: The folder of the token.
-- `tokenName`: The name of the token.
-
-### getCachedMP3Metadata
-
-Gets cached metadata of mp3 files.
-
-**Parameters**:
-- `tokenFolder`: The folder of the token.
-- `tokenName`: The name of the token.
-
-### fetchMP3Metadata
-
-Fetches metadata of mp3 files.
-
-**Parameters**:
-- `tokenFolder`: The folder of the token.
-
-### updateMP3MetadataCache
-
-Updates the cache of mp3 metadata.
-
-**Parameters**:
-- `tokenFolder`: The folder of the token.
-- `mp3Files`: The list of mp3 files.
-
-### showEditDialog
-
-Shows a dialog to edit the Description of a file.
-
-**Parameters**:
-- `filePath`: The path of the file.
-- `file`: The file metadata.
-- `tokenFolder`: The folder of the token.
-- `mp3Files`: The list of mp3 files.
-
-### runPlaySound
-
-Plays a sound from the provided chunks of data.
-
-**Parameters**:
-- `chunks`: The sound data chunks.
-
-### Fetch_History
-
-Fetches the history of generated sounds.
-
-### doStuff
-
-A placeholder function for additional actions.
 
 ## Usage
 
@@ -226,6 +110,10 @@ Alternatively, you can use the HUD to generate token voices:
 
 # Note
 If you select a token and create a voice sound, remember that you need to have a voice with the same name of the token in Elevenlabs.io. The module will try to save that voice in a subfolder named like the token. It's good practice to re-create those folders in advance. 
+If you don't want to name an elevenlabs voice like one of your token, you can use tagger to tag the token and choose a different voice using the formato voice:voicename
+this works only on pc tokens. 
+example: Otto doesn't have a voicename called Otto on elevenlabs, but i want to assign him a voice called Sam. I tag Otto with voice:Sam
+
 
 ### Creating Token Effects
 
