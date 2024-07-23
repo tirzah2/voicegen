@@ -277,6 +277,34 @@ VoiceGen provides an API for programmatic interaction with the module. You can a
 ## Changelog
 
 <!-- changelog-start -->
+## 2.2
+**Full Changelog**: https://github.com/tirzah2/voicegen/compare/2.1.1...2.2
+
+## 2.1.1
+**Full Changelog**: https://github.com/tirzah2/voicegen/compare/2.1...2.1.1
+
+## 2.1
+**Full Changelog**: https://github.com/tirzah2/voicegen/compare/2...2.1
+
+now player's character tokens don't have to use a  voice named like them in elevenlabs. If voicegen doesnt find a voice named  like yoru token, you can add a tag on the token in this format voice:voicename for example voice:Bill (Bill being a voice name in elevenlabs)
+
+## 2
+**Full Changelog**: https://github.com/tirzah2/voicegen/compare/1.9.1...2
+
+Added NPC voices (create voices using any of the available voices, imported, cloned, community, etc). You dont have to stick to the same voice, you can change it everytime.
+
+## 1.9.1
+## What's Changed
+* Test by @tirzah2 in https://github.com/tirzah2/voicegen/pull/1
+
+## New Contributors
+* @tirzah2 made their first contribution in https://github.com/tirzah2/voicegen/pull/1
+
+**Full Changelog**: https://github.com/tirzah2/voicegen/compare/1.9...1.9.1
+
+## 1.9
+**Full Changelog**: https://github.com/tirzah2/voicegen/compare/1.8.2...1.9
+
 ## 1.8.2
 **Full Changelog**: https://github.com/tirzah2/voicegen/compare/1.8.1...1.8.2
 
