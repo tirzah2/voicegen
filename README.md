@@ -9,6 +9,9 @@ VoiceGen is a Foundry VTT V11 module that allows Game Masters (GMs) and players 
 - Tagger
 - Warpgate
 
+## Free Subscription Requirement
+This module requires integration with the ElevenLabs API https://elevenlabs.io/ to function properly. To use this module, you must have at least a free subscription to ElevenLabs. The subscription allows you to obtain the necessary API keys to access the service. Please visit the ElevenLabs Subscription Page to sign up for a subscription and to learn more about the different tiers available. Ensure that you properly configure your API keys in the module settings to enable full functionality. 
+
 ## Table of Contents
 
 1. [Installation](#installation)
