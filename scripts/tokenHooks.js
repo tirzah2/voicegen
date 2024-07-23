@@ -136,92 +136,101 @@ async function createNpcSoundUI(wrapper, token, tokenFolder, mp3Files) {
 }
 
 function displayMp3Files(wrapper, token, tokenFolder, mp3Files, isCharacter) {
-    const visibleFiles = mp3Files.filter(file => file.lyrics !== 'DELETED');
+    const switchHTML = `
+        <div class="switch-toggle switch-3 switch-candy">
+            <input id="fx" name="state-d" type="radio" />
+            <label for="fx" onclick="">FX</label>
+
+            <input id="all" name="state-d" type="radio" checked=""/>
+            <label for="all" onclick="">ALL</label>
+
+            <input id="vox" name="state-d" type="radio" />
+            <label for="vox" onclick="">VOX</label>
+
+            <a></a>
+        </div>
+    `;
+
+    wrapper.prepend(switchHTML);
+
+    // Initial filter and render
+    renderFilteredSounds('all', wrapper, token, tokenFolder, mp3Files, isCharacter);
+
+    // Event listener for switch
+    $('input[name="state-d"]').change(function () {
+        const selectedFilter = $('input[name="state-d"]:checked').attr('id');
+        renderFilteredSounds(selectedFilter, wrapper, token, tokenFolder, mp3Files, isCharacter);
+    });
+}
+
+function renderFilteredSounds(filter, wrapper, token, tokenFolder, mp3Files, isCharacter) {
+    const visibleFiles = mp3Files.filter(file => {
+        if (file.lyrics === 'DELETED') return false;
+        if (filter === 'fx') return file.lyrics.toLowerCase().startsWith('effetto') || file.lyrics.toLowerCase().startsWith('effect');
+        if (filter === 'vox') return !(file.lyrics.toLowerCase().startsWith('effetto') || file.lyrics.toLowerCase().startsWith('effect'));
+        return true;  // 'all' or default case
+    });
+
+    // Clear previous icons and any "No Audio Found" messages
+    wrapper.find('.sound-icon, .voice-icon, .no-audio').remove();
 
     if (visibleFiles.length === 0) {
-        let noAudioMessage = 'No Audio Found';
-        let voiceNameToUse = null;
-
-        if (isCharacter) {
-            // Check if voice exists with the same name as the token
-            const voiceExists = game.modules.get('voicegen').api.Voice_Exists(token.name);
-            if (!voiceExists) {
-                // Check for voice tags
-                const tokenDocument = canvas.tokens.get(token._id); // Get the token document
-                const tags = Tagger.getTags(tokenDocument);
-                const voiceTag = tags.find(tag => tag.startsWith('voice:'));
-                if (voiceTag) {
-                    const taggedVoiceName = voiceTag.split(':')[1];
-                    if (game.modules.get('voicegen').api.Voice_Exists(taggedVoiceName)) {
-                        noAudioMessage += ` and there is No Voice with the name (${token.name}) using tagged voice: ${taggedVoiceName}`;
-                        voiceNameToUse = taggedVoiceName;
-                    } else {
-                        noAudioMessage += ` and there is No Voice with the name (${token.name}) or tagged voice: ${taggedVoiceName}`;
-                    }
-                } else {
-                    noAudioMessage += ` and there is No Voice with the name (${token.name})`;
-                }
-            }
-        }
-
-        wrapper.append(`<div class="no-audio">${noAudioMessage}</div>`);
+        displayNoAudioMessage(wrapper, token, isCharacter);
     } else {
-        for (const file of visibleFiles) {
-            const filePath = `${tokenFolder}/${file.name}`;
-            const lyrics = file.lyrics;
+        visibleFiles.forEach(file => {
+            displaySoundIcon(wrapper, file, tokenFolder, mp3Files);
+        });
+    }
+}
 
-            const isVoiceFile = file.lyrics.toLowerCase().startsWith('effetto') || file.lyrics.toLowerCase().startsWith('effect');
-            const sparklesIcon = isVoiceFile ? '<i class="fas fa-sparkles"></i> ' : '';
-            const soundIconClass = isVoiceFile ? 'voice-icon' : 'sound-icon';
+function displaySoundIcon(wrapper, file, tokenFolder, mp3Files) { // Ensure mp3Files is included in parameters
+    const filePath = `${tokenFolder}/${file.name}`;
+    const lyrics = file.lyrics;
+    const isVoiceFile = lyrics.toLowerCase().startsWith('effetto') || lyrics.toLowerCase().startsWith('effect');
+    const sparklesIcon = isVoiceFile ? '<i class="fas fa-sparkles"></i> ' : '';
+    const soundIconClass = isVoiceFile ? 'voice-icon' : 'sound-icon';
 
-            const icon = $(`
-                <div class="${soundIconClass}" title="${lyrics}">
-                    <i class="fas fa-play"></i>
-                    <span>${sparklesIcon}${lyrics}</span>
-                    <span class="delete-icon"><i class="fas fa-times"></i></span>
-                </div>
-            `);
+    const icon = $(`
+        <div class="${soundIconClass}" title="${lyrics}">
+            <i class="fas fa-play"></i>
+            <span>${sparklesIcon}${lyrics}</span>
+            <span class="delete-icon"><i class="fas fa-times"></i></span>
+        </div>
+    `);
 
-            icon.find('.delete-icon').click(async (event) => {
-                event.stopPropagation();
-                await markFileAsDeleted(filePath, file, tokenFolder, mp3Files);
-                icon.remove();
-                if (!wrapper.children('.sound-icon').length) {
-                    let noAudioMessage = 'No Audio Found';
-                    if (isCharacter) {
-                        // Check if voice exists only for characters
-                        const voiceExists = game.modules.get('voicegen').api.Voice_Exists(token.name);
-                        if (!voiceExists) {
-                            // Check for voice tags
-                            const tokenDocument = canvas.tokens.get(token._id); // Get the token document
-                            const tags = Tagger.getTags(tokenDocument);
-                            const voiceTag = tags.find(tag => tag.startsWith('voice:'));
-                            if (voiceTag) {
-                                const taggedVoiceName = voiceTag.split(':')[1];
-                                if (game.modules.get('voicegen').api.Voice_Exists(taggedVoiceName)) {
-                                    noAudioMessage += ` and there is No Voice with the name (${token.name}) using tagged voice: ${taggedVoiceName}`;
-                                } else {
-                                    noAudioMessage += ` and there is No Voice with the name (${token.name}) or tagged voice: ${taggedVoiceName}`;
-                                }
-                            } else {
-                                noAudioMessage += ` and there is No Voice with the name (${token.name})`;
-                            }
-                        }
-                    }
-                    wrapper.append(`<div class="no-audio">${noAudioMessage}</div>`);
-                }
-            });
+    setupIconEvents(icon, filePath, file, tokenFolder, mp3Files, wrapper);
+    wrapper.append(icon);
+}
 
-            icon.click(() => {
-                AudioHelper.play({ src: filePath, volume: 1, autoplay: true, loop: false }, true);
-            });
+function setupIconEvents(icon, filePath, file, tokenFolder, mp3Files, wrapper) {
+    icon.find('.delete-icon').click(async (event) => {
+        event.stopPropagation();
+        await markFileAsDeleted(filePath, file, tokenFolder, mp3Files);
+        icon.remove();
+        checkForEmptyList(wrapper, mp3Files); // Ensure mp3Files is passed here
+    });
 
-            icon.contextmenu(() => {
-                showEditDialog(filePath, file, tokenFolder, mp3Files);
-            });
+    icon.click(() => {
+        AudioHelper.play({ src: filePath, volume: 1, autoplay: true, loop: false }, true);
+    });
 
-            wrapper.append(icon);
-        }
+    icon.contextmenu(() => {
+        showEditDialog(filePath, file, tokenFolder, mp3Files);
+    });
+}
+
+function checkForEmptyList(wrapper, mp3Files) { // Ensure mp3Files is included in parameters
+    if (!wrapper.children('.sound-icon, .voice-icon').length) {
+        displayNoAudioMessage(wrapper);
+    }
+}
+
+function displayNoAudioMessage(wrapper, token, isCharacter) {
+    let noAudioMessage = 'No Audio Found';
+    // Additional logic to customize the message based on token and character status
+    // Ensures that the message only appears once
+    if (wrapper.children('.no-audio').length === 0) {
+        wrapper.append(`<div class="no-audio">${noAudioMessage}</div>`);
     }
 }
 
