@@ -63,6 +63,7 @@ https://github.com/user-attachments/assets/dc4b66fb-f701-4efe-8aa4-49c829604b48
 ### Token Effects
 Select a token to which you want to add an effect, in the chat write /effect [description] (duration) filename.mp3
 example: /effect [the sound of a man suffering] (4) suffering.mp3
+NOW PART OF THE HUD
 Generate sound effects associated with specific tokens, saving them in a designated folder. If a token is selected, the effect will be saved in a subfolder named after the token.
 (easter egg: if you change the description to something that start with "effect" the button will become green)
 
