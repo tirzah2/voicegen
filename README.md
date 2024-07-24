@@ -177,6 +177,25 @@ VoiceGen provides an API for programmatic interaction with the module. You can a
 ## Changelog
 
 <!-- changelog-start -->
+## 2.3.2.1
+Fixed issue with english languages in forced language turbo 2.5
+
+## 2.3.2
+**Full Changelog**: https://github.com/tirzah2/voicegen/compare/2.3.1.1...2.3.2
+
+Added the possibility to force a specific language when using model turbo 2.5 (this also kinda allows to have strong accents)
+<img width="373" alt="chrome_7T0cOB2Xx3" src="https://github.com/user-attachments/assets/d6ed0b43-0f0f-4d1a-a848-8fe78b92f7d6">
+
+## 2.3.1.1
+
+
+## 2.3.1
+**Full Changelog**: https://github.com/tirzah2/voicegen/compare/2.3...2.3.1
+test yml
+
+## 2.3
+**Full Changelog**: https://github.com/tirzah2/voicegen/compare/2.2...2.3
+
 ## 2.2
 **Full Changelog**: https://github.com/tirzah2/voicegen/compare/2.1.1...2.2
 
