@@ -48,11 +48,75 @@ Hooks.once('init', () => {
             "eleven_monolingual_v1": "Eleven Monolingual V1"
         },
         default: "eleven_multilingual_v2",
-        onChange: value => { Initialize_Main() }
+        onChange: value => { Initialize_Main(); updateForceLanguageVisibility(); }
+    });
+
+    game.settings.register("voicegen", "force-language", {
+        name: "Force Language",
+        hint: "Select the language code to force when using Eleven Turbo V2.5",
+        scope: "client",
+        config: true,
+        type: String,
+        choices: {
+            "US": "🇺🇸 English (USA)",
+            "GB": "🇬🇧 English (UK)",
+            "AU": "🇦🇺 English (Australia)",
+            "CA": "🇨🇦 English (Canada)",
+            "JP": "🇯🇵 Japanese",
+            "CN": "🇨🇳 Chinese",
+            "DE": "🇩🇪 German",
+            "IN": "🇮🇳 Hindi",
+            "FR": "🇫🇷 French (France)",
+            "CA": "🇨🇦 French (Canada)",
+            "KR": "🇰🇷 Korean",
+            "BR": "🇧🇷 Portuguese (Brazil)",
+            "PT": "🇵🇹 Portuguese (Portugal)",
+            "IT": "🇮🇹 Italian",
+            "ES": "🇪🇸 Spanish (Spain)",
+            "MX": "🇲🇽 Spanish (Mexico)",
+            "ID": "🇮🇩 Indonesian",
+            "NL": "🇳🇱 Dutch",
+            "TR": "🇹🇷 Turkish",
+            "PH": "🇵🇭 Filipino",
+            "PL": "🇵🇱 Polish",
+            "SE": "🇸🇪 Swedish",
+            "BG": "🇧🇬 Bulgarian",
+            "RO": "🇷🇴 Romanian",
+            "SA": "🇸🇦 Arabic (Saudi Arabia)",
+            "AE": "🇦🇪 Arabic (UAE)",
+            "CZ": "🇨🇿 Czech",
+            "GR": "🇬🇷 Greek",
+            "FI": "🇫🇮 Finnish",
+            "HR": "🇭🇷 Croatian",
+            "MY": "🇲🇾 Malay",
+            "SK": "🇸🇰 Slovak",
+            "DK": "🇩🇰 Danish",
+            "IN": "🇮🇳 Tamil",
+            "UA": "🇺🇦 Ukrainian",
+            "RU": "🇷🇺 Russian",
+            "HU": "🇭🇺 Hungarian",
+            "NO": "🇳🇴 Norwegian",
+            "VN": "🇻🇳 Vietnamese"
+        },
+        default: "",
+        onChange: value => { updateForceLanguageVisibility(); }
     });
 
     Initialize_Main();
-})
+    Hooks.on("renderSettingsConfig", updateForceLanguageVisibility);
+});
+
+function updateForceLanguageVisibility() {
+    const selectedModel = game.settings.get("voicegen", "selected-model");
+    const forceLanguageSetting = document.querySelector(`input[name="voicegen.force-language"]`)?.closest(".form-group");
+    if (forceLanguageSetting) {
+        if (selectedModel === "eleven_turbo_v2_5") {
+            forceLanguageSetting.style.display = "block";
+        } else {
+            forceLanguageSetting.style.display = "none";
+        }
+    }
+}
 
 Hooks.once('setup', () => {
     game.modules.get('voicegen').api = {
@@ -132,10 +196,6 @@ export function Play_Sound_HUD(lyrics, token) {
         Set_Key_Window();
     }
 }
-
-
-
-
 
 function Play_Sound(message) {
     if (message.startsWith("/playsound")) {
@@ -277,7 +337,6 @@ async function Generate_Sound_Effect(effectDescription, filename, duration = 3) 
     }
 }
 
-
 async function getAmbientSoundOptions(path) {
     return new Promise((resolve) => {
         new Dialog({
@@ -325,32 +384,52 @@ async function getAmbientSoundOptions(path) {
 
 async function Text_To_Speech(voiceID, text, tokenName) {
     const selectedModel = game.settings.get("voicegen", "selected-model");
+    const requestBody = {
+        "text": text,  // This is the spoken text
+        "model_id": selectedModel  // Use the selected model
+    };
 
-    let container = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceID}`, {
-        method: 'POST',
-        headers: {
-            'accept': 'audio/mpeg',
-            'xi-api-key': selected_api_key,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            "text": text,  // This is the spoken text
-            "model_id": selectedModel  // Use the selected model
-        })
-    });
+    if (selectedModel === "eleven_turbo_v2_5") {
+        const selectedLanguage = game.settings.get("voicegen", "force-language");
+        if (selectedLanguage) {
+            requestBody.language_code = selectedLanguage.toLowerCase();
+        }
+    }
 
-    let responseBlob = await container.blob();
-    let arrayBuffer = await responseBlob.arrayBuffer();
+    try {
+        let container = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceID}`, {
+            method: 'POST',
+            headers: {
+                'accept': 'audio/mpeg',
+                'xi-api-key': selected_api_key,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
 
-    // Embedding ID3 Tags with the text as lyrics
-    let modifiedBuffer = await embedLyrics(arrayBuffer, text);  // Pass ArrayBuffer directly
+        if (!container.ok) {
+            const errorText = await container.text();
+            throw new Error(`Error ${container.status}: ${errorText}`);
+        }
 
-    const baseSavePath = game.settings.get("voicegen", "save-voice-folder");
-    const voiceFolder = `${baseSavePath}/${tokenName.replace(/[\W_]+/g, "_")}`;
-    const filename = `Voice-${Date.now()}.mp3`;
+        let responseBlob = await container.blob();
+        let arrayBuffer = await responseBlob.arrayBuffer();
 
-    saveFile(new Uint8Array(modifiedBuffer), `${voiceFolder}/${filename}`, true);
+        // Embedding ID3 Tags with the text as lyrics
+        let modifiedBuffer = await embedLyrics(arrayBuffer, text);  // Pass ArrayBuffer directly
+
+        const baseSavePath = game.settings.get("voicegen", "save-voice-folder");
+        const voiceFolder = `${baseSavePath}/${tokenName.replace(/[\W_]+/g, "_")}`;
+        const filename = `Voice-${Date.now()}.mp3`;
+
+        saveFile(new Uint8Array(modifiedBuffer), `${voiceFolder}/${filename}`, true);
+    } catch (error) {
+        console.error('Error in Text_To_Speech:', error);
+        ui.notifications.error(`Failed to generate speech: ${error.message}`);
+    }
 }
+
+
 
 async function embedLyrics(arrayBuffer, description) {
     try {
