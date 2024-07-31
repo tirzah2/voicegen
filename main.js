@@ -258,7 +258,7 @@ async function Get_Voices() {
     return all_Voices;
 }
 
-async function Generate_Sound_Effect(effectDescription, filename, duration = 3) {
+async function Generate_Sound_Effect(effectDescription, filename, duration = 3, volume = 0.5, radius = 30) {
     let savePath;
 
     // Extract the filename without the extension for lyric embedding
@@ -310,15 +310,40 @@ async function Generate_Sound_Effect(effectDescription, filename, duration = 3) 
                 yes: {
                     label: "Yes",
                     callback: async () => {
-                        let options = await getAmbientSoundOptions(`${savePath}/${filename}`);
-                        const location = await warpgate.crosshairs.show({
-                            size: 1,
-                            label: "Select Sound Location",
-                            tag: 'sound'
+                        // Change cursor to crosshair
+                        const cursorStyle = document.body.style.cursor;
+                        document.body.style.cursor = 'crosshair';
+
+                        const location = await new Promise(resolve => {
+                            const handler = event => {
+                                const pos = event.data.getLocalPosition(canvas.app.stage);
+                                canvas.stage.off('click', handler);
+                                document.body.style.cursor = cursorStyle; // Reset cursor
+                                resolve({x: pos.x, y: pos.y});
+                            };
+                            canvas.stage.on('click', handler);
                         });
-                        options.x = location.x;
-                        options.y = location.y;
-                        canvas.scene.createEmbeddedDocuments("AmbientSound", [options]);
+
+                        const options = {
+                            x: location.x,
+                            y: location.y,
+                            path: `${savePath}/${filename}`,
+                            volume: volume, // Set volume
+                            radius: radius, // Set radius
+                            easing: true, // Enable volume easing
+                            hidden: false // Make it visible by default
+                        };
+
+                        const [ambientSound] = await canvas.scene.createEmbeddedDocuments("AmbientSound", [options]);
+
+                        // Create a chat message confirming the addition
+                        const sceneLink = `@Scene[${canvas.scene.id}]{${canvas.scene.name}}`;
+                        const chatMessage = `Ambient sound added to scene: ${sceneLink}. With a Volume of ${volume} and a Radius of ${radius}. Adjust as needed. File can be found in the folder: ${savePath}/${filename}.`;
+                        ChatMessage.create({
+                            content: chatMessage,
+                            whisper: ChatMessage.getWhisperRecipients("GM").map(u => u.id),
+                            style: CONST.CHAT_MESSAGE_STYLES.OTHER
+                        });
                     }
                 },
                 no: {
