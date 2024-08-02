@@ -1,8 +1,24 @@
+let microphoneButton;
+let stopRecordingButton;
+let cancelRecordingButton;
+let elapsedTimeTag;
+let recordingControlButtonsContainer;
+let audioElementSource;
+const script = document.createElement('script');
+script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js';
+script.onload = () => {
+    console.log('lame.min.js loaded successfully.');
+};
+script.onerror = () => {
+    console.error('Failed to load lame.min.js.');
+};
+document.head.appendChild(script);
+
 export function registerTokenHooks() {
     Hooks.on('renderTokenHUD', async (hud, html, token) => {
         const actor = game.actors.get(token.actorId);
         if (!actor) return;
-        
+
         console.log('Rendering Token HUD for token:', token.name);
         if (!hud._soundBoard || hud._soundBoard.id !== hud.object.id)
             hud._soundBoard = { id: hud.object.id, active: false };
@@ -41,30 +57,65 @@ export function registerTokenHooks() {
         `);
         html.find('div.right').last().append(refreshButton);
 
-        button.click((event) => _onButtonClick(event, token, hud, mp3Files, tokenFolder, actor.type === 'character'));
+        button.click((event) => _onButtonClick(event, token, hud, mp3Files, tokenFolder, actor.type === 'character', html));
         refreshButton.click(async (event) => {
             mp3Files = await refreshMP3Metadata(tokenFolder, token.name);
             if (hud._soundBoard.active) {
                 hud._soundBoard.active = false;
                 button.removeClass('active');
-                button.find('.token-sounds-wrapper').remove();
+                button.siblings('.token-sounds-wrapper').remove();
             }
         });
 
         if (mp3Files.length === 0) return;
+
+        // Initialize recording setup
+        initializeRecording(token, tokenFolder);
+
+        // Observe the token-hud for style changes
+        observeTokenHud();
     });
 }
 
-async function _onButtonClick(event, token, hud, mp3Files, tokenFolder, isCharacter) {
+async function _onButtonClick(event, token, hud, mp3Files, tokenFolder, isCharacter, html) {
     const button = $(event.target).closest('.control-icon');
     button.toggleClass('active');
     hud._soundBoard.active = button.hasClass('active');
 
-    let wrapper = button.find('.token-sounds-wrapper');
+    let wrapper = button.siblings('.token-sounds-wrapper');
     if (button.hasClass('active')) {
         if (!wrapper.length) {
             wrapper = $('<div class="token-sounds-wrapper"></div>');
-            button.find('i').after(wrapper);
+            button.after(wrapper);
+
+            const configButton = $(`
+                <div class="control-icon token-sound-config" data-action="token-sound-config" title="Token Sound Config">
+                    <i class="fas fa-cog"></i>
+                </div>
+            `);
+            wrapper.append(configButton);
+
+            configButton.click((event) => _onConfigButtonClick(event, configButton));
+
+            // Add event listeners to mode buttons
+            $('input[name="state-d"]').on('change', function () {
+                const mode = $(this).attr('id');
+                console.log('Mode changed to:', mode); // Debugging log
+                if (mode === 'fx') {
+                    configButton.hide();
+                } else {
+                    configButton.show();
+                }
+            });
+
+            // Set initial visibility of config button based on the current mode
+            const initialMode = $('input[name="state-d"]:checked').attr('id');
+            console.log('Initial mode:', initialMode); // Debugging log
+            if (initialMode === 'fx') {
+                configButton.hide();
+            } else {
+                configButton.show();
+            }
 
             if (isCharacter) {
                 createCharacterSoundUI(wrapper, token, tokenFolder, mp3Files);
@@ -77,6 +128,259 @@ async function _onButtonClick(event, token, hud, mp3Files, tokenFolder, isCharac
         wrapper.removeClass('active');
     }
 }
+
+function _onConfigButtonClick(event, configButton) {
+    const existingConfigWrapper = document.querySelector('.token-sound-config-wrapper');
+    
+    if (existingConfigWrapper) {
+        const isWrapperVisible = existingConfigWrapper.style.display === 'block';
+        configButton.toggleClass('active', !isWrapperVisible);
+        existingConfigWrapper.style.display = isWrapperVisible ? 'none' : 'block';
+    } else {
+        const newConfigWrapper = $(`
+            <div class="token-sound-config-wrapper" style="display: none; position: absolute;">
+                <i class="fas fa-times close-config" style="position: absolute; top: 5px; right: 5px; font-size: 20px; cursor: pointer;"></i>
+                <label for="stability">Stability</label>
+                <input type="range" id="stability" name="stability" min="0.3" max="1" step="0.01" value="0.5">
+                <span id="stability-value">0.5</span>
+
+                <label for="similarity_boost">Similarity Boost</label>
+                <input type="range" id="similarity_boost" name="similarity_boost" min="0.3" max="1" step="0.01" value="0.8">
+                <span id="similarity-boost-value">0.8</span>
+            </div>
+        `);
+        $('#interface').after(newConfigWrapper);
+
+        newConfigWrapper.find('.close-config').click(() => {
+            newConfigWrapper.hide();
+            configButton.removeClass('active');
+        });
+
+        // Make the config wrapper draggable
+        if (typeof $.ui !== 'undefined') {
+            newConfigWrapper.draggable({
+                containment: 'window'
+            });
+        } else {
+            const script = document.createElement('script');
+            script.src = 'https://code.jquery.com/ui/1.12.1/jquery-ui.min.js';
+            script.onload = () => {
+                newConfigWrapper.draggable({
+                    containment: 'window'
+                });
+            };
+            document.head.appendChild(script);
+        }
+
+        // Initialize the slider value display
+        updateSliderValue('stability', 'stability-value');
+        updateSliderValue('similarity_boost', 'similarity-boost-value');
+
+        // Add event listeners for the sliders to update their values dynamically
+        $('#stability').on('input', function() {
+            updateSliderValue('stability', 'stability-value');
+        });
+        $('#similarity_boost').on('input', function() {
+            updateSliderValue('similarity_boost', 'similarity-boost-value');
+        });
+
+        // Stop propagation for config wrapper and its children
+        newConfigWrapper.on('click', function(event) {
+            event.stopPropagation();
+        });
+
+        newConfigWrapper.show();
+        configButton.addClass('active');
+    }
+}
+
+// Function to update the displayed value of a slider
+function updateSliderValue(sliderId, valueId) {
+    const slider = document.getElementById(sliderId);
+    const valueDisplay = document.getElementById(valueId);
+
+    slider.addEventListener('input', () => {
+        valueDisplay.textContent = slider.value;
+    });
+}
+
+// Function to observe changes to the token-hud element
+function observeTokenHud() {
+    const tokenHud = document.getElementById('token-hud');
+    if (!tokenHud) return;
+
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            if (mutation.attributeName === 'style') {
+                const style = window.getComputedStyle(tokenHud);
+                if (style.display === 'none') {
+                    deactivateConfigWrapper();
+                }
+            }
+        });
+    });
+
+    observer.observe(tokenHud, { attributes: true, attributeFilter: ['style'] });
+}
+
+// Function to deactivate the token-sound-config-wrapper
+function deactivateConfigWrapper() {
+    const configWrapper = document.querySelector('.token-sound-config-wrapper');
+    if (configWrapper) {
+        $(configWrapper).hide();
+        const configButton = document.querySelector('.control-icon.token-sound-config');
+        if (configButton) {
+            configButton.classList.remove('active');
+        }
+    }
+}
+
+
+
+function convertToMp3AndSave(audioBlob) {
+    var reader = new FileReader();
+    reader.onload = function (event) {
+        var buffer = event.target.result;
+
+        // Check the first few bytes for a valid WAV header
+        var dataView = new DataView(buffer);
+        var isValidWav = dataView.getUint32(0, false) === 0x52494646; // "RIFF" in ASCII
+        if (!isValidWav) {
+            console.error('Invalid WAV header.');
+            return;
+        }
+
+        var wav = lamejs.WavHeader.readHeader(dataView);
+        if (!wav) {
+            console.error('WAV header could not be read.');
+            return;
+        }
+
+        var samples = new Int16Array(buffer, wav.dataOffset, wav.dataLen / 2);
+        var mp3enc = new lamejs.Mp3Encoder(1, wav.sampleRate, 128);
+        var mp3Data = [];
+        var sampleBlockSize = 1152;
+        for (var i = 0; i < samples.length; i += sampleBlockSize) {
+            var sampleChunk = samples.subarray(i, i + sampleBlockSize);
+            var mp3buf = mp3enc.encodeBuffer(sampleChunk);
+            if (mp3buf.length > 0) {
+                mp3Data.push(new Int8Array(mp3buf));
+            }
+        }
+        var mp3buf = mp3enc.flush();
+        if (mp3buf.length > 0) {
+            mp3Data.push(new Int8Array(mp3buf));
+        }
+        var mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
+        saveMp3File(mp3Blob);
+    };
+    reader.readAsArrayBuffer(audioBlob);
+}
+
+function initializeRecording() {
+    document.addEventListener("DOMContentLoaded", function () {
+        microphoneButton = document.querySelector(".start-recording-button");
+        stopRecordingButton = document.querySelector(".stop-recording-button");
+        cancelRecordingButton = document.querySelector(".cancel-recording-button");
+        elapsedTimeTag = document.querySelector(".elapsed-time");
+        recordingControlButtonsContainer = document.querySelector(".recording-control-buttons-container");
+        const audioElement = document.querySelector(".audio-element");
+        audioElementSource = audioElement.getElementsByTagName("source")[0];
+
+        if (microphoneButton) {
+            microphoneButton.addEventListener("click", function (event) {
+                event.stopPropagation();
+                startAudioRecording();
+            });
+        }
+
+        if (stopRecordingButton) stopRecordingButton.onclick = stopAudioRecording;
+        if (cancelRecordingButton) cancelRecordingButton.onclick = cancelAudioRecording;
+    });
+}
+
+function startAudioRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function (stream) {
+            handleRecording(stream);
+        })
+        .catch(function (error) {
+            console.error("Microphone access denied:", error);
+            alert("Microphone access is required to record audio.");
+        });
+}
+
+function handleRecording(stream) {
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' }); // Correct MIME type for audio
+    const audioChunks = [];
+    const sampleRate = 44100;
+    const kbps = 128;
+    let mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, kbps);
+    let mp3Data = [];
+
+    mediaRecorder.addEventListener("dataavailable", event => {
+        if (event.data.size > 0) {
+            audioChunks.push(event.data);
+        }
+    });
+
+    mediaRecorder.addEventListener("stop", async () => {
+        console.log("Stopping Audio Recording...");
+
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const arrayBuffer = await audioBlob.arrayBuffer();
+
+        // Decode audio data to PCM format
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+        // Convert PCM data to Int16Array for lamejs
+        const pcmData = audioBuffer.getChannelData(0); // Assuming mono channel
+        const samples = new Int16Array(pcmData.length);
+        for (let i = 0; i < pcmData.length; i++) {
+            samples[i] = pcmData[i] * 32767;
+        }
+
+        // Encode to MP3
+        const sampleBlockSize = 1152;
+        for (let i = 0; i < samples.length; i += sampleBlockSize) {
+            const sampleChunk = samples.subarray(i, i + sampleBlockSize);
+            const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+            if (mp3buf.length > 0) {
+                mp3Data.push(new Int8Array(mp3buf));
+            }
+        }
+
+        const mp3buf = mp3encoder.flush();
+        if (mp3buf.length > 0) {
+            mp3Data.push(new Int8Array(mp3buf));
+        }
+
+        const mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
+        playAudio(mp3Blob);
+        saveMp3File(mp3Blob, tokenFolder);
+
+        // Stop all tracks to stop the microphone
+        stream.getTracks().forEach(track => track.stop());
+    });
+
+    mediaRecorder.start();
+    handleDisplayingRecordingControlButtons();
+
+    stopRecordingButton.onclick = function () {
+        mediaRecorder.stop();
+        handleHidingRecordingControlButtons();
+    };
+
+    cancelRecordingButton.onclick = function () {
+        mediaRecorder.stop();
+        stream.getTracks().forEach(track => track.stop());
+        handleHidingRecordingControlButtons();
+    };
+}
+
+
+
 
 function createCharacterSoundUI(wrapper, token, tokenFolder, mp3Files) {
     // Add input box and create button
@@ -127,8 +431,6 @@ async function createNpcSoundUI(wrapper, token, tokenFolder, mp3Files) {
         const lyrics = createContainer.find('.create-input11').val();
         if (lyrics) {
             await game.modules.get('voicegen').api.Text_To_Speech(selectedVoice, lyrics, token.name);
-            //const newMp3Files = await refreshMP3Metadata(tokenFolder, token.name);
-            //displayMp3Files(wrapper, token, tokenFolder, newMp3Files, false);
             createContainer.find('.create-input11').val('');
             deactivateTokenSoundsWrapper(wrapper);
         }
@@ -137,28 +439,46 @@ async function createNpcSoundUI(wrapper, token, tokenFolder, mp3Files) {
     displayMp3Files(wrapper, token, tokenFolder, mp3Files, false, true);
 }
 
-function deactivateTokenSoundsWrapper(wrapper) {
-    // Assuming the active class or attribute needs to be toggled
-    let tokenSoundsWrapper = wrapper.find('.token-sounds-wrapper');
-    if (tokenSoundsWrapper.length) {
-        tokenSoundsWrapper.removeClass('active'); // Adjust this line based on how "active" state is managed
-    }
-}
 function displayMp3Files(wrapper, token, tokenFolder, mp3Files, isCharacter, keepWrapperInactive = false) {
     const switchHTML = `
-        <div class="switch-toggle switch-3 switch-candy">
-            <input id="fx" name="state-d" type="radio" />
-            <label for="fx" onclick="">FX</label>
+    <div class="switch-toggle switch-3 switch-candy">
+        <input id="fx" name="state-d" type="radio" />
+        <label for="fx" onclick="">FX</label>
 
-            <input id="all" name="state-d" type="radio" checked=""/>
-            <label for="all" onclick="">ALL</label>
+        <input id="all" name="state-d" type="radio" checked=""/>
+        <label for="all" onclick="">ALL</label>
 
-            <input id="vox" name="state-d" type="radio" />
-            <label for="vox" onclick="">VOX</label>
+        <input id="vox" name="state-d" type="radio" />
+        <label for="vox" onclick="">VOX</label>
 
-            <a></a>
+        <a></a>
+    </div>
+
+    <div class="microphone-icon-container">
+        <i class="start-recording-button fa fa-microphone" aria-hidden="true"></i>
+    </div>
+    <div class="recording-control-buttons-container hide">
+        <i class="cancel-recording-button fa fa-times-circle-o" aria-hidden="true"></i>
+        <div class="recording-elapsed-time">
+            <i class="red-recording-dot fa fa-circle" aria-hidden="true"></i>
+            <p class="elapsed-time"></p>
         </div>
-    `;
+        <i class="stop-recording-button fa fa-stop-circle-o" aria-hidden="true"></i>
+    </div>
+    <div class="overlay hide">
+        <div class="browser-not-supporting-audio-recording-box">
+            <p>To record audio, use browsers like Chrome and Firefox that support audio recording.</p>
+            <button type="button" class="close-browser-not-supported-box">Ok.</button>
+        </div>
+    </div>
+    <audio controls class="audio-element hide">
+        <source src="">
+    </audio>
+    <div class="text-indication-of-audio-playing-container">
+        <p class="text-indication-of-audio-playing hide">Audio is playing<span>.</span><span>.</span><span>.</span></p>
+    </div>
+`;
+
 
     wrapper.prepend(switchHTML);
 
@@ -177,9 +497,244 @@ function displayMp3Files(wrapper, token, tokenFolder, mp3Files, isCharacter, kee
         renderFilteredSounds(selectedFilter, wrapper, token, tokenFolder, mp3Files, isCharacter);
         toggleFxForm(selectedFilter, wrapper, token);
     });
+
+    // Setup recording event listeners
+    setupRecordingEventListeners(token, tokenFolder);
 }
 
+function setupRecordingEventListeners(token, tokenFolder) {
+    var microphoneButton = document.querySelector(".start-recording-button");
+    var recordingControlButtonsContainer = document.querySelector(".recording-control-buttons-container");
+    var stopRecordingButton = document.querySelector(".stop-recording-button");
+    var cancelRecordingButton = document.querySelector(".cancel-recording-button");
+    var elapsedTimeTag = document.querySelector(".elapsed-time");
+    var closeBrowserNotSupportedBoxButton = document.querySelector(".close-browser-not-supported-box");
+    var overlay = document.querySelector(".overlay");
+    var audioElement = document.querySelector(".audio-element");
+    var audioElementSource = audioElement.getElementsByTagName("source")[0];
+    var textIndicatorOfAudiPlaying = document.querySelector(".text-indication-of-audio-playing");
 
+    var audioRecordStartTime;
+    var elapsedTimeTimer;
+    var mediaRecorder;
+
+    if (microphoneButton) {
+        microphoneButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            startAudioRecording();
+        });
+    }
+
+    if (stopRecordingButton) stopRecordingButton.onclick = stopAudioRecording;
+    if (cancelRecordingButton) cancelRecordingButton.onclick = cancelAudioRecording;
+    if (closeBrowserNotSupportedBoxButton) closeBrowserNotSupportedBoxButton.onclick = hideBrowserNotSupportedOverlay;
+    if (audioElement) audioElement.onended = hideTextIndicatorOfAudioPlaying;
+
+    function startAudioRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function (stream) {
+                handleRecording(stream);
+            })
+            .catch(function (error) {
+                console.error("Microphone access denied:", error);
+                alert("Microphone access is required to record audio.");
+            });
+    }
+
+    function stopAudioRecording() {
+        console.log("Stopping Audio Recording...");
+
+        mediaRecorder.stop()
+            .then(audioAsBlob => {
+                playAudio(audioAsBlob);
+                handleHidingRecordingControlButtons();
+            })
+            .catch(error => {
+                switch (error.name) {
+                    case 'InvalidStateError':
+                        console.log("An InvalidStateError has occurred.");
+                        break;
+                    default:
+                        console.log("An error occurred with the error name " + error.name);
+                }
+            });
+    }
+
+    function cancelAudioRecording() {
+        console.log("Canceling audio...");
+
+        mediaRecorder.cancel();
+        handleHidingRecordingControlButtons();
+    }
+
+    function handleRecording(stream) {
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' }); // Correct MIME type for audio
+        const audioChunks = [];
+        const sampleRate = 44100;
+        const kbps = 128;
+        let mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, kbps);
+        let mp3Data = [];
+
+        mediaRecorder.addEventListener("dataavailable", event => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        });
+
+        mediaRecorder.addEventListener("stop", async () => {
+            console.log("Stopping Audio Recording...");
+
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const arrayBuffer = await audioBlob.arrayBuffer();
+
+            // Decode audio data to PCM format
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+            // Convert PCM data to Int16Array for lamejs
+            const pcmData = audioBuffer.getChannelData(0); // Assuming mono channel
+            const samples = new Int16Array(pcmData.length);
+            for (let i = 0; i < pcmData.length; i++) {
+                samples[i] = pcmData[i] * 32767;
+            }
+
+            // Encode to MP3
+            const sampleBlockSize = 1152;
+            for (let i = 0; i < samples.length; i += sampleBlockSize) {
+                const sampleChunk = samples.subarray(i, i + sampleBlockSize);
+                const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+                if (mp3buf.length > 0) {
+                    mp3Data.push(new Int8Array(mp3buf));
+                }
+            }
+
+            const mp3buf = mp3encoder.flush();
+            if (mp3buf.length > 0) {
+                mp3Data.push(new Int8Array(mp3buf));
+            }
+
+            const mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
+            playAudio(mp3Blob);
+            const filePath = await saveMp3File(mp3Blob, tokenFolder);
+            await saveUpdatedLyrics(filePath, 'DELETED'); // Mark the file as deleted
+            await game.modules.get('voicegen').api.transformSpeechToSpeech(filePath, token); // Transform the speech using ElevenLabs API
+
+            // Stop all tracks to stop the microphone
+            stream.getTracks().forEach(track => track.stop());
+        });
+
+        mediaRecorder.start();
+        handleDisplayingRecordingControlButtons();
+
+        stopRecordingButton.onclick = function () {
+            mediaRecorder.stop();
+            handleHidingRecordingControlButtons();
+        };
+
+        cancelRecordingButton.onclick = function () {
+            mediaRecorder.stop();
+            stream.getTracks().forEach(track => track.stop());
+            handleHidingRecordingControlButtons();
+        };
+    }
+
+    function playAudio(audioBlob) {
+        const audioUrl = URL.createObjectURL(audioBlob);
+        audioElementSource.src = audioUrl;
+        audioElement.load();
+        audioElement.play();
+    }
+
+    async function saveMp3File(mp3Blob, tokenFolder) {
+        const filename = generateRandomFilename() + ".mp3";
+        const file = new File([mp3Blob], filename, { type: 'audio/mp3' });
+    
+        const response = await FilePicker.upload('data', tokenFolder, file, {});
+        if (response.path) {
+            console.log("Audio file saved successfully:", response.path);
+            return response.path;
+        } else {
+            console.error("Failed to save audio file.");
+            throw new Error("Failed to save audio file.");
+        }
+    }
+
+    function generateRandomFilename() {
+        var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var result = '';
+        for (var i = 0; i < 8; i++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        return result;
+    }
+
+    function handleDisplayingRecordingControlButtons() {
+        microphoneButton.style.display = "none";
+        if (recordingControlButtonsContainer) recordingControlButtonsContainer.classList.remove("hide");
+        handleElapsedRecordingTime();
+    }
+
+    function handleElapsedRecordingTime() {
+        audioRecordStartTime = new Date();
+        displayElapsedTimeDuringAudioRecording("00:00");
+
+        elapsedTimeTimer = setInterval(function () {
+            const elapsedTime = computeElapsedTime(audioRecordStartTime);
+            displayElapsedTimeDuringAudioRecording(elapsedTime);
+        }, 1000);
+    }
+
+    function handleHidingRecordingControlButtons() {
+        microphoneButton.style.display = "block";
+        if (recordingControlButtonsContainer) recordingControlButtonsContainer.classList.add("hide");
+        clearInterval(elapsedTimeTimer);
+    }
+
+    function hideBrowserNotSupportedOverlay() {
+        console.log("Hiding browser not supported overlay");
+        if (overlay) overlay.classList.add("hide");
+    }
+
+    function computeElapsedTime(startTime) {
+        const endTime = new Date();
+        let timeDiff = endTime - startTime;
+        timeDiff = timeDiff / 1000;
+        const seconds = Math.floor(timeDiff % 60);
+        const formattedSeconds = seconds < 10 ? "0" + seconds : seconds;
+        timeDiff = Math.floor(timeDiff / 60);
+        const minutes = timeDiff % 60;
+        const formattedMinutes = minutes < 10 ? "0" + minutes : minutes;
+        timeDiff = Math.floor(timeDiff / 60);
+        const hours = timeDiff % 24;
+        const formattedHours = hours < 10 ? "0" + hours : hours;
+
+        return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    }
+
+    function displayElapsedTimeDuringAudioRecording(elapsedTime) {
+        if (elapsedTimeTag) elapsedTimeTag.innerHTML = elapsedTime;
+
+        if (elapsedTimeReachedMaximumNumberOfHours(elapsedTime)) {
+            stopAudioRecording();
+        }
+    }
+
+    function elapsedTimeReachedMaximumNumberOfHours(elapsedTime) {
+        var elapsedTimeSplitted = elapsedTime.split(":");
+        var maximumRecordingTimeInHoursAsString = "01"; // Assuming 1 hour max
+
+        if (elapsedTimeSplitted.length === 3 && elapsedTimeSplitted[0] === maximumRecordingTimeInHoursAsString)
+            return true;
+        else
+            return false;
+    }
+
+    function hideTextIndicatorOfAudioPlaying() {
+        if (textIndicatorOfAudiPlaying) textIndicatorOfAudiPlaying.classList.add("hide");
+    }
+
+
+}
 
 
 function toggleFxForm(filter, wrapper, token) {
@@ -233,7 +788,12 @@ function renderFilteredSounds(filter, wrapper, token, tokenFolder, mp3Files, isC
 
     // Clear previous icons and any "No Audio Found" messages
     wrapper.find('.sound-icon, .voice-icon, .no-audio').remove();
-
+    const micIconContainer = wrapper.find('.microphone-icon-container');
+    if (filter === 'fx') {
+        micIconContainer.hide();
+    } else {
+        micIconContainer.show();
+    }
     if (visibleFiles.length === 0) {
         displayNoAudioMessage(wrapper, token, isCharacter);
     } else {
