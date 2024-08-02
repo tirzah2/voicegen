@@ -4,6 +4,68 @@
 .switch-toggle a, .switch-light span span {
   display: none; }
 
+  .token-sound-config-wrapper {
+    display: none;
+    position: absolute;
+    top: 0px;
+    width: 280px;
+    left: 100px;
+    height: 190px;
+    border-radius: 10px;
+    background: #39162287;
+    background-color: rgb(75 17 17 / 57%);
+    color: white;
+    overflow: auto;
+    z-index: 2000;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    cursor: default;
+}
+
+.token-sound-config-wrapper label {
+  display: block;
+  margin-top: 10px;
+}
+
+.token-sound-config-wrapper input[type="range"] {
+  width: 100%;
+}
+
+.token-sound-config-wrapper span {
+  display: block;
+  text-align: center;
+  margin-top: 5px;
+}
+.token-sound-config-wrapper .close-config {
+  position: absolute;
+  top: 5px;
+  right: 0px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  width: 26px;
+}
+.token-sound-config-wrapper .drag-icon {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  font-size: 50px;
+  cursor: move;
+}
+.control-icon.token-sound-config {
+  position: absolute;
+  /* top: 0px; */
+  right: 4px;
+  z-index: 100;
+  top: 5px;
+  font-size: 14px;
+  width: 30px;
+  height: fit-content;
+  line-height: 30px;
+}
 @media only screen {
 
   .switch-light {
@@ -83,6 +145,7 @@
   .switch-toggle {
     position: relative;
     display: block;
+    width: 224px;
     /* simulate default browser focus outlines on the switch,
    * when the inputs are focused.
    */
@@ -488,7 +551,7 @@
   visibility: hidden;
   position: absolute;
   left: 65px;
-  top: -132px;
+  top: -50px;
   box-sizing: content-box;
   width: 250px;
   grid-template-columns: repeat(4, 25%);
@@ -507,6 +570,7 @@
 
 .token-sounds-wrapper.active {
   visibility: visible;
+  align-items: center;
 }
 
 .token-sounds-wrapper .sound-control {
@@ -578,6 +642,7 @@
   background-color: #7ed321;
   border-radius: 5px;
   width: 100%;
+  cursor: pointer;
 }
 
 .sound-icon i {
@@ -606,7 +671,7 @@
 .delete-icon {
   margin-right: -120px;
   color: #ff4d4d;
-  cursor: pointer;
+  cursor: cell;
 }
 
 .dialog-content {
@@ -672,4 +737,219 @@
 
 .create-button11:hover {
   background: #a12c52;
+}
+.audio-recording-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.start-recording-button {
+  font-size: 70px;
+  color: #435f7a;
+  cursor: pointer;
+  opacity: 0.5;
+  margin-bottom: 30px;
+}
+
+.start-recording-button:hover {
+  opacity: 1;
+}
+
+.recording-control-buttons-container {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  width: 210px;
+  margin-bottom: 33px;
+}
+
+.recording-control-buttons-container.hide {
+  display: none;
+}
+
+.cancel-recording-button,
+.stop-recording-button {
+  font-size: 70px;
+  cursor: pointer;
+}
+
+.cancel-recording-button {
+  color: red;
+  opacity: 0.7;
+}
+
+.cancel-recording-button:hover {
+  color: rgb(206, 4, 4);
+}
+
+.stop-recording-button {
+  color: white; /* Improved contrast for the icon */
+  background: linear-gradient(145deg, #ff5f5f, #ff1a1a); /* Gradient for a modern look */
+  border-radius: 10px; /* Rounded corners for a smoother look */
+  width: 45px; /* Adjusted size for better visibility */
+  height: 45px;
+  font-size: 24px; /* Adjusted font size for better icon appearance */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Add a shadow for a 3D effect */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer; /* Cursor changes to pointer to indicate interactability */
+  transition: transform 0.2s, box-shadow 0.2s; /* Smooth transition for hover effects */
+  position: relative;
+  top: 18px;
+  left: 26px;
+  transform: translate(-22%, -50%);
+  opacity: 0.7;
+}
+
+.stop-recording-button:hover {
+  transform: translate(-22%, -50%) scale(1.1); /* Scale up slightly on hover */
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3); /* Enhance shadow on hover */
+}
+
+.stop-recording-button:active {
+  transform: translate(-22%, -50%) scale(0.95); /* Scale down slightly on click */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Soften shadow on click */
+}
+
+
+.recording-elapsed-time {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.red-recording-dot {
+  font-size: 25px;
+  color: red;
+  margin-right: 12px;
+  animation-name: flashing-recording-dot;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+}
+
+@keyframes flashing-recording-dot {
+  0% {
+      opacity: 1;
+  }
+  50% {
+      opacity: 0;
+  }
+  100% {
+      opacity: 1;
+  }
+}
+
+.elapsed-time {
+  font-size: 32px;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  background-color: rgba(82, 76, 76, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay.hide {
+  display: none;
+}
+
+.browser-not-supporting-audio-recording-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 317px;
+  height: 119px;
+  background-color: white;
+  border-radius: 10px;
+  padding: 15px;
+  font-size: 16px;
+}
+
+.close-browser-not-supported-box {
+  cursor: pointer;
+  background-color: #abc1c05c;
+  border-radius: 10px;
+  font-size: 16px;
+  border: none;
+}
+
+.close-browser-not-supported-box:hover {
+  background-color: #92a5a45c;
+}
+
+.close-browser-not-supported-box:focus {
+  outline: none;
+  border: none;
+}
+
+.audio-element.hide {
+  display: none;
+}
+
+.text-indication-of-audio-playing-container {
+  height: 20px;
+}
+
+.text-indication-of-audio-playing {
+  font-size: 20px;
+}
+
+.text-indication-of-audio-playing.hide {
+  display: none;
+}
+
+.text-indication-of-audio-playing span {
+  animation-name: blinking-dot;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+}
+
+.text-indication-of-audio-playing span:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.text-indication-of-audio-playing span:nth-child(3) {
+  animation-delay: 0.8s;
+}
+
+@keyframes blinking-dot {
+  0% {
+      opacity: 0;
+  }
+  50% {
+      opacity: 1;
+  }
+  100% {
+      opacity: 0;
+  }
+}
+
+.microphone-icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  align-items: center;
+}
+
+.start-recording-button {
+  font-size: 40px; /* Adjust the size as needed */
+  color: green; /* Adjust the color as needed */
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.start-recording-button:hover {
+  opacity: 1;
 }
