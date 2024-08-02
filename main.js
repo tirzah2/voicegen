@@ -133,7 +133,10 @@ Hooks.once('setup', () => {
         Create_Window,
         Set_Key,
         Set_Key_Window,
-        Voice_Exists
+        Voice_Exists,
+        transformSpeechToSpeech,
+        getVoiceIdForToken,
+        saveTransformedFile
     };
 });
 
@@ -187,6 +190,122 @@ export function Play_Sound_HUD(lyrics, token) {
         }
     } else {
         Set_Key_Window();
+    }
+}
+export async function transformSpeechToSpeech(filePath, token) {
+    const XI_API_KEY = game.settings.get("voicegen", "xi-api-key");
+    const VOICE_ID = await getVoiceIdForToken(token);
+    const sts_url = `https://api.elevenlabs.io/v1/speech-to-speech/${VOICE_ID}/stream`;
+
+    const formData = new FormData();
+    const response = await fetch(filePath);
+    const blob = await response.blob();
+    formData.append("audio", new Blob([blob], { type: 'audio/mp3' }));
+    formData.append("model_id", "eleven_multilingual_sts_v2");
+
+    // Get stability and similarity boost values
+    const stabilityElement = document.getElementById('stability');
+    const similarityBoostElement = document.getElementById('similarity_boost');
+    
+    const stability = stabilityElement ? parseFloat(stabilityElement.value) || 0.5 : 0.5;
+    const similarityBoost = similarityBoostElement ? parseFloat(similarityBoostElement.value) || 0.8 : 0.8;
+    
+    
+
+    // Validate the values
+    const stabilityValid = stability >= 0.3 && stability <= 1;
+    const similarityBoostValid = similarityBoost >= 0 && similarityBoost <= 1;
+
+    // Construct voice settings
+    const voiceSettings = {
+        "style": 0.0,
+        "use_speaker_boost": true
+    };
+
+    if (stabilityValid) {
+        voiceSettings.stability = stability;
+    }
+
+    if (similarityBoostValid) {
+        voiceSettings.similarity_boost = similarityBoost;
+    }
+
+    formData.append("voice_settings", JSON.stringify(voiceSettings));
+
+    // Log the form data before sending
+    for (let pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+    }
+
+    const responseStream = await fetch(sts_url, {
+        method: 'POST',
+        headers: {
+            "xi-api-key": XI_API_KEY
+        },
+        body: formData
+    });
+
+    if (responseStream.ok) {
+        const transformedBlob = await responseStream.blob();
+        const transformedFileName = filePath.replace('.mp3', '_transformed.mp3');
+        await saveTransformedFile(transformedBlob, transformedFileName);
+        console.log("Transformed audio saved successfully:", transformedFileName);
+    } else {
+        console.error("Failed to transform audio:", await responseStream.text());
+    }
+}
+
+
+
+export async function getVoiceIdForToken(token) {
+    let voice;
+
+    const actor = game.actors.get(token.actorId);
+
+    if (actor && actor.type === 'npc') {
+        // Get the voice name from the dropdown for NPCs
+        const voiceDropdown = document.querySelector('.voice-select');
+        const voiceId = voiceDropdown.value;
+        voice = all_Voices.find(obj => obj.voice_id === voiceId);
+    } else {
+        // Check if a voice with the same name as the token exists
+        voice = all_Voices.find(obj => obj.name === token.name);
+        
+        if (!voice) {
+            const tokenDocument = canvas.tokens.get(token._id); // Get the token document
+            const tags = Tagger.getTags(tokenDocument);
+            const voiceTag = tags.find(tag => tag.startsWith('voice:'));
+            if (voiceTag) {
+                const voiceName = voiceTag.split(':')[1];
+                voice = all_Voices.find(obj => obj.name === voiceName);
+                if (voice) {
+                    ui.notifications.info(`Using tagged voice: ${voiceName}`);
+                }
+            }
+        }
+    }
+
+    if (voice) {
+        return voice.voice_id;
+    } else {
+        ui.notifications.error(`Voice for token '${token.name}' not found. Visit <a href="https://www.elevenlabs.io/" target="_blank">https://www.elevenlabs.io/</a> and create a voice named '${token.name}'. Also, remember to refresh both elevenlabs and foundry by pressing F5`);
+        throw new Error(`Voice for token '${token.name}' not found.`);
+    }
+}
+
+
+
+export async function saveTransformedFile(blob, filePath) {
+    const file = new File([blob], filePath.split('/').pop(), { type: "audio/mpeg" });
+    const dir = filePath.substring(0, filePath.lastIndexOf('/'));
+
+    try {
+        const response = await FilePicker.upload("data", dir, file, {}, { notify: true });
+        console.log("File upload response:", response);
+        ui.notifications.info(`File saved: ${filePath}`);
+    } catch (err) {
+        console.error("Error saving file:", err);
+        ui.notifications.error(`Failed to save file: ${filePath}`);
     }
 }
 
@@ -426,7 +545,7 @@ async function Text_To_Speech(voiceID, text, tokenName) {
 
 async function embedLyrics(arrayBuffer, description) {
     try {
-        const mp3tag = new MP3Tag(arrayBuffer);
+        const mp3tag = new MP3Tag(arrayBuffer, true);
         mp3tag.read();
 
         if (mp3tag.error !== '') {
